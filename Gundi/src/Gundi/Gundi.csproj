@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IncludeBuiltOutput>false</IncludeBuiltOutput>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" PrivateAssets="all" />
+        <PackageReference Include="Scriban" Version="5.4.1" GeneratePathProperty="true" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="$(OutputPath)\Gundi.Attributes.dll" Pack="true" PackagePath="lib\net6.0" Visible="true" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <None Remove="Union.sbn-cs" />
+        <EmbeddedResource Include="Union.sbn-cs" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Gundi.Attributes\Gundi.Attributes.csproj" PrivateAssets="All" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetDependencyTargetPaths">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGScriban)\lib\net6.0\Scriban.dll" IncludeRuntimeDependency="false" />
+        </ItemGroup>
+    </Target>
+
+</Project>

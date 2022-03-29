@@ -1,0 +1,128 @@
+#nullable enable
+
+using System;
+
+namespace {{ Union.Namespace }}
+{
+    partial record {{ Union.FullDefinitionType }}
+    {
+        {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
+        private readonly byte tag;
+        
+        {{~ for c in Union.Cases ~}}
+        {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
+        private readonly {{ c.Type }} {{ c.Name }};
+        {{~ end ~}} 
+        
+        {{~ for c in Union.Cases ~}}
+        public bool Is{{ c.PascalName }}() => tag == {{ c.Index }};
+        {{~ end ~}} 
+        
+        {{ if Union.Settings.ConstructorAttribute.IsDefined }}[{{ Union.Settings.ConstructorAttribute.TypeName }}]{{ end }}
+        private {{ Union.TypeNameOnly }}(
+        {{- for c in Union.Cases }}
+            {{ c.Type }} {{ c.Name }},
+        {{- end }}
+            byte tag)
+        {
+            {{~ for c in Union.Cases ~}}
+            this.{{ c.Name }} = {{ c.Name }};
+            {{~ end ~}}
+            this.tag = tag;
+        }
+        
+        {{~ for c in Union.Cases ~}}
+        public static {{ Union.TypeWithSimpleGeneric }} {{ c.PascalName }}({{ c.Type }} {{c.Name }}) 
+            => new(
+            {{~ for cc in Union.Cases ~}}
+                {{- if cc.Index == c.Index ~}}
+                {{ c.Name }}
+                {{- else ~}}
+                default!
+                {{- end ~}},
+            {{~ end ~}}
+                {{ c.Index }}
+            );
+        {{~ end ~}}
+        
+        private string ActualCaseName()
+        {
+            return tag switch
+            {
+                {{~ for c in Union.Cases ~}}
+                {{ c.Index }} => "{{ c.PascalName }}",
+                {{~ end ~}}
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+        
+        public void Match(
+            {{~ for c in Union.Cases ~}}
+            Action<{{ c.Type }}> {{ c.Name }}{{ if c.Index != Union.Cases.size }},{{ end }}
+            {{~ end ~}}
+            )
+        {
+            switch (tag)
+            {
+                {{~ for c in Union.Cases ~}}
+                case {{ c.Index }}: 
+                    {{ c.Name }}(this.{{ c.Name }});
+                    break;
+                {{~ end ~}}
+                default: throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!");
+            };
+        }        
+        
+        public TOut Match<TOut>(
+            {{~ for c in Union.Cases ~}}
+            Func<{{ c.Type }}, TOut> {{ c.Name }}{{ if c.Index != Union.Cases.size }},{{ end }}
+            {{~ end ~}}
+            )
+        {
+            return tag switch
+            {
+                {{~ for c in Union.Cases ~}}
+                {{ c.Index }} => {{ c.Name }}(this.{{ c.Name }}),
+                {{~ end ~}}
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+        
+        public {{ Union.TypeWithSimpleGeneric }} Map(
+            {{~ for c in Union.Cases ~}}
+            Func<{{ c.Type }}, {{ c.Type }}> {{ c.Name }}{{ if c.Index != Union.Cases.size }},{{ end }}
+            {{~ end ~}}
+            )
+        {
+            return tag switch
+            {
+                {{~ for c in Union.Cases ~}}
+                {{ c.Index }} => {{ c.PascalName }}({{ c.Name }}(this.{{ c.Name }})),
+                {{~ end ~}}
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }        
+        
+        public override string ToString() => ActualCaseName();
+        
+        {{~ for c in Union.Cases ~}}
+        
+        public TOut Match{{ c.PascalName }}<TOut>(Func<{{ c.Type }}, TOut> {{ c.Name }}, TOut _)
+            => Is{{ c.PascalName }}() ? {{ c.Name }}(this.{{ c.Name }}) : _;
+            
+        public TOut Match{{ c.PascalName }}<TOut>(Func<{{ c.Type }}, TOut> {{ c.Name }}, Func<TOut> _)
+            => Is{{ c.PascalName }}() ? {{ c.Name }}(this.{{ c.Name }}) : _();
+                    
+        public {{ c.Type }} CastTo{{ c.PascalName }}()
+            => Is{{ c.PascalName }}() 
+                ? this.{{ c.Name }} 
+                : {{ if Union.Settings.CustomException.IsDefined -}}
+                  throw new {{ Union.Settings.CustomException.TypeName }}(this.GetType(), nameof({{ c.PascalName }}), ActualCaseName());
+                  {{- else -}}
+                  throw new InvalidOperationException(
+                    $"Wrong union cast. Expected state: {{ c.PascalName }}, Actual state: {ActualCaseName()}.");
+                  {{~ end ~}}
+
+        {{~ end ~}}
+    }
+}
