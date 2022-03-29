@@ -1,4 +1,4 @@
-# gundi
+# gundi [![GitHub](https://img.shields.io/github/license/lukaszkrzywizna/gundi)](/LICENSE)
 A generator for discriminated union for C# (based on union in F#)
 
 - [Overview](#overview)
