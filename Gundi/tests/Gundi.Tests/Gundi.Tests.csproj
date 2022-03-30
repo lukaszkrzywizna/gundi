@@ -9,22 +9,20 @@
         <WarningsAsErrors>Nullable</WarningsAsErrors>
         <IsPackable>false</IsPackable>
         <!-- Uncomment to see generated files -->
-        <!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
-        <!--        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
+<!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
+<!--        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Gundi.Attributes\Gundi.Attributes.csproj"/>
-        <ProjectReference Include="..\..\src\Gundi\Gundi.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer"/>
-        <ProjectReference Include="..\AnotherAssembly\AnotherAssembly.csproj"/>
-        <ProjectReference Include="..\ClassLibrary1\ClassLibrary1.fsproj"/>
+        <ProjectReference Include="..\..\src\Gundi.Attributes\Gundi.Attributes.csproj" />
+        <ProjectReference Include="..\..\src\Gundi\Gundi.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\AnotherAssembly\AnotherAssembly.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FSharp.Core" Version="6.0.3"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
-        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="xunit" Version="2.4.1" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>

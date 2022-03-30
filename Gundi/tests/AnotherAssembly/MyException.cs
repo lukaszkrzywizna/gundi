@@ -1,4 +1,6 @@
-﻿namespace AnotherAssembly;
+﻿using Gundi;
+
+namespace AnotherAssembly;
 
 public class BaseException : Exception
 {
@@ -14,4 +16,10 @@ public class MyException : BaseException
         : base(unionType, expectedCase, actualCase)
     {
     }
+}
+
+[Union(CustomCastException = typeof(MyException))]
+public partial record MyAssemblyUnion
+{
+    static partial void Cases(int a, string b);
 }

@@ -1,9 +1,12 @@
 #nullable enable
 
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace {{ Union.Namespace }}
 {
+    
     partial record {{ Union.FullDefinitionType }}
     {
         {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
@@ -124,5 +127,34 @@ namespace {{ Union.Namespace }}
                   {{~ end ~}}
 
         {{~ end ~}}
+        
+        public class Converter : System.Text.Json.Serialization.JsonConverter<{{ Union.FullDefinitionType }}>
+        {
+            private record JsonUnion(string Case, object Value);
+            
+            public override {{ Union.FullDefinitionType }}? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                if (reader.TokenType == JsonTokenType.Null) return null;
+                var value = JsonSerializer.Deserialize<JsonUnion>(ref reader, options);
+                var caseValue = (JsonElement) value!.Value;
+                return value.Case switch
+                {
+                    {{~ for c in Union.Cases ~}}
+                    "{{ c.PascalName }}" => {{ c.PascalName }}(caseValue.Deserialize<{{ c.Type }}>(options)!),
+                    {{~ end ~}}
+                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), value.Case, "Union has undefined state!")
+                };
+            }
+        
+            public override void Write(Utf8JsonWriter writer, {{ Union.FullDefinitionType }} value, JsonSerializerOptions options)
+            {
+                var obj = value.Match(
+                    {{~ for c in Union.Cases ~}}
+                    {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
+                    {{~ end ~}}
+                    );
+                JsonSerializer.Serialize(writer, new JsonUnion(value.ActualCaseName(), obj!));
+            }
+        }
     }
 }
