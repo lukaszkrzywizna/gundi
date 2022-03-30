@@ -1,15 +1,10 @@
 using System.Globalization;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using AnotherAssembly;
-using ClassLibrary1;
 using Gundi.Tests.Internal;
-using Microsoft.FSharp.Core;
 using Newtonsoft.Json;
 using Xunit;
 using JsonConstructorAttribute = Newtonsoft.Json.JsonConstructorAttribute;
-using JsonConverter = System.Text.Json.Serialization.JsonConverter;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Gundi.Tests;
@@ -47,9 +42,9 @@ public record Union
 {
     private readonly byte tag;
     private readonly int a;
-    private readonly string b;
+    private readonly Testa b;
 
-    private Union(byte tag, int a, string b)
+    private Union(byte tag, int a, Testa b)
     {
         this.tag = tag;
         this.a = a;
@@ -57,9 +52,9 @@ public record Union
     }
 
     public static Union A(int a) => new Union(1, a, default!);
-    public static Union B(string b) => new Union(2, default!, b);
+    public static Union B(Testa b) => new Union(2, default!, b);
 
-    public TOut Map<TOut>(Func<int, TOut> a, Func<string, TOut> b)
+    public TOut Map<TOut>(Func<int, TOut> a, Func<Testa, TOut> b)
     {
         return tag switch
         {
@@ -69,7 +64,7 @@ public record Union
         };
     }
     
-    public void Map(Action<int> a, Action<string> b)
+    public void Map(Action<int> a, Action<Testa> b)
     {
         switch (tag)
         {
@@ -95,71 +90,21 @@ public record Union
     {
         public override Union? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            // void AssertMatchedProperty(string propertyName)
-            // {
-            //     if (reader.TokenType != JsonTokenType.PropertyName || !string.Equals(reader.Value!.ToString(),
-            //             propertyName, StringComparison.OrdinalIgnoreCase))
-            //         throw new InvalidOperationException();
-            // }
-
+            if (reader.TokenType == JsonTokenType.Null) return null;
             var value = JsonSerializer.Deserialize<JsonUnion>(ref reader, options);
             var caseValue = (JsonElement) value!.Value;
-            return value!.Case switch
+            return value.Case switch
             {
-                "A" => A(caseValue.Deserialize<int>()),
-                "B" => B(caseValue.Deserialize<string>()!),
+                "A" => A(caseValue.Deserialize<int>(options)!),
+                "B" => B(caseValue.Deserialize<Testa>(options)!),
                 _ => throw new InvalidOperationException()
             };
-            
-            // if (reader.TokenType == JsonTokenType.Null) return null;
-            // reader.Read();
-            // if (reader.TokenType != JsonTokenType.PropertyName || reader.GetString() != nameof(JsonUnion.Case))
-            //     throw new InvalidOperationException();
-            // reader.Read();
-            // var caseValue = reader.GetString();
-            // reader.Read();
-            // if (reader.TokenType != JsonTokenType.PropertyName || reader.GetString() != nameof(JsonUnion.Value))
-            //     throw new InvalidOperationException();
-            // reader.Read();
-            // var jsonValue = reader.GetString();
-            // var result = caseValue switch
-            // {
-            //     "A" => A(JsonSerializer.Deserialize<int>(jsonValue!, options)),
-            //     "B" => B(JsonSerializer.Deserialize<string>(jsonValue!, options)!),
-            //     _ => throw new InvalidOperationException()
-            // };
-            // reader.Read();
-            // return result;
-            //
-            //
-            // var json = reader.GetString();
-            // if (json is null) return null;
-            // var jUnion = JsonSerializer.Deserialize<JsonUnion>(json, options);
-            // return jUnion!.Case switch
-            // {
-            //     "A" => A(JsonSerializer.Deserialize<int>(jUnion.Value, options)),
-            //     "B" => B(JsonSerializer.Deserialize<string>(jUnion.Value, options)!),
-            //     _ => throw new InvalidOperationException()
-            // };
         }
 
         public override void Write(Utf8JsonWriter writer, Union value, JsonSerializerOptions options)
         {
-            var obj = value.Map(a => a as object, b => b as object);
+            var obj = value.Map(a => a as object, b => b);
             JsonSerializer.Serialize(writer, new JsonUnion(value.ActualCaseName(), obj));
-            return;
-            
-            writer.WriteStartObject();
-            writer.WriteString(nameof(JsonUnion.Case), value!.ActualCaseName());
-            writer.WritePropertyName(nameof(JsonUnion.Value));
-            var v = value.Map(a => JsonSerializer.Serialize(a, options), b => JsonSerializer.Serialize(b, options));
-            writer.WriteStringValue(v);
-            writer.WriteEndObject();
-            
-            // var valueJson = value.Map(a => JsonSerializer.Serialize(a, options), b => JsonSerializer.Serialize(b, options));
-            // var jUnion = JsonSerializer.Serialize(new JsonUnion(value.ActualCaseName(), valueJson));
-            // var encode = JsonEncodedText.Encode(jUnion, encoder: JavaScriptEncoder.UnsafeRelaxedJsonEscaping);
-            // writer.WriteStringValue(encode);
         }
     }
 
@@ -184,33 +129,18 @@ public record Union
             reader.Read();
             var result = caseName switch
             {
-                "A" => A(serializer.Deserialize<int>(reader)),
-                "B" => B(serializer.Deserialize<string>(reader)!),
+                "A" => A(serializer.Deserialize<int>(reader)!),
+                "B" => B(serializer.Deserialize<Testa>(reader)!),
                 _ => throw new InvalidOperationException()
             };
             reader.Read();
             return result;
-            
-            // if (reader.TokenType == JsonToken.Null) return null;
-            // var jUnion = serializer.Deserialize<JsonUnion>(reader);
-            // var valueReader = new JsonTextReader(new StringReader(jUnion!.Value));
-            // return jUnion.Case switch
-            // {
-            //     "A" => A(serializer.Deserialize<int>(valueReader)),
-            //     "B" => B(serializer.Deserialize<string>(valueReader)!),
-            //     _ => throw new InvalidOperationException()
-            // };
         }
 
         public override void WriteJson(JsonWriter writer, Union? value, Newtonsoft.Json.JsonSerializer serializer)
         {
             if (value is null) writer.WriteNull();
-            writer.WriteStartObject();
-            writer.WritePropertyName(nameof(JsonUnion.Case));
-            writer.WriteValue(value!.ActualCaseName());
-            writer.WritePropertyName(nameof(JsonUnion.Value));
-            value!.Map(a => serializer.Serialize(writer, a), b => serializer.Serialize(writer, b));
-            writer.WriteEndObject();
+            serializer.Serialize(writer, new JsonUnion(value!.ActualCaseName(), value.Map(a => a as object, b => b)));
         }
     }
 }
@@ -226,7 +156,7 @@ public class Tests
         var tt = JsonConvert.SerializeObject(testa);
         var ttt = JsonSerializer.Serialize(testa);
         
-        var uu = Union.A(5);
+        var uu = Union.B(testa);
         var jc = JsonConvert.SerializeObject(uu);
         var jcc = JsonSerializer.Serialize(uu);
         JsonSerializer.Deserialize<Union>(jcc);
