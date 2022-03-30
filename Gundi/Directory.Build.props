@@ -1,21 +1,21 @@
 <Project>
 
-  <PropertyGroup>
-    <Author>Łukasz Krzywizna</Author>
-    <Authors>$(Author)</Authors>
-    <Copyright>Copyright © Łukasz Krzywizna $([System.DateTime]::Now.Year)</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-	<PackageTags>union discriminated-union sum-type functional tagged-union</PackageTags>
-    <RepositoryUrl>https://github.com/lukaszkrzywizna/gundi</RepositoryUrl>
-	<RepositoryType>git</RepositoryType>
-  </PropertyGroup>
+    <PropertyGroup>
+        <Author>Łukasz Krzywizna</Author>
+        <Authors>$(Author)</Authors>
+        <Copyright>Copyright © Łukasz Krzywizna $([System.DateTime]::Now.Year)</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageTags>union discriminated-union sum-type functional tagged-union</PackageTags>
+        <RepositoryUrl>https://github.com/lukaszkrzywizna/gundi</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)\artifacts</PackageOutputPath>
-  </PropertyGroup>
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <PackageOutputPath>$(MSBuildThisFileDirectory)\artifacts</PackageOutputPath>
+    </PropertyGroup>
 
 </Project>
