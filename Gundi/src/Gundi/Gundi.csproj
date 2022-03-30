@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <IncludeBuiltOutput>false</IncludeBuiltOutput>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <Description>Discrimated union source generator</Description>
     </PropertyGroup>
     
     <ItemGroup>

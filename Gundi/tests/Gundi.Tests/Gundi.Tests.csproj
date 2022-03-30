@@ -5,8 +5,9 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <GenerateProgramFile>false</GenerateProgramFile>
+        <GenerateProgramFile>false</GenerateProgramFile>    
         <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <IsPackable>false</IsPackable>
         <!-- Uncomment to see generated files -->
 <!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
 <!--        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->

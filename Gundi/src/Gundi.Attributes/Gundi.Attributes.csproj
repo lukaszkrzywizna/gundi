@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Gundi</RootNamespace>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
 </Project>
