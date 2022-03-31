@@ -1,18 +1,24 @@
 # gundi [![GitHub](https://img.shields.io/github/license/lukaszkrzywizna/gundi)](/LICENSE)
+
 A generator for discriminated union for C# (based on union in F#)
 
 - [Overview](#overview)
-  - [Defining a union](#defining-a-union)
-  - [Using](#using)
-  - [Union casting](#union-casting)
-  - [Serialization](#serialization)
+    - [Defining a union](#defining-a-union)
+    - [Using](#using)
+    - [Union casting](#union-casting)
+    - [Serialization](#serialization)
 - [License](#license)
 
 ## Overview
-A union is a value that represents several different cases of a different name or/and type. It is useful for modeling more complex choice types - to express that provided data could be shaped differently. For example, Union `TxtOrNumber` of a `string txt` and `int number` informs, that type can contain a `string` or `int`, but never both.
+
+A union is a value that represents several different cases of a different name or/and type. It is useful for modeling
+more complex choice types - to express that provided data could be shaped differently. For example, Union `TxtOrNumber`
+of a `string txt` and `int number` informs, that type can contain a `string` or `int`, but never both.
 
 ### Defining a union
+
 In order to use a generator, there has to be a defined simple union schema:
+
 ```csharp
 using Gundi;
 
@@ -25,10 +31,13 @@ public partial record SimpleUnion
 }
 ```
 
-The `Union` attribute applies for a partial record (struct and class is NOT ALLOWED). It helps the generator, to identify which types should be enhanced.
-The `Cases` method uses specified types and argument names to define union cases.
+The `Union` attribute applies for a partial record (struct and class is NOT ALLOWED). It helps the generator, to
+identify which types should be enhanced. The `Cases` method uses specified types and argument names to define union
+cases.
 
-The generator will generate a partial record which will contain all arguments kept as a private field and some public API:
+The generator will generate a partial record which will contain all arguments kept as a private field and some public
+API:
+
 ```csharp
 
 namespace Gundi.Tests
@@ -51,7 +60,9 @@ namespace Gundi.Tests
 ```
 
 ### Using
+
 Generated union should contain static argument-named factory function, and simple `match` & `map` methods:
+
 ```csharp
 var union = SimpleUnion.A(5);
 Console.WriteLine(union.IsA()); // prints true
@@ -73,7 +84,10 @@ Console.WriteLine(mappedCase); // prints 6
 
 ### Union casting
 
-The generator will generate `Cast` functions, which "force" to get a defined union case or throws an exception. By default, `InvalidOperationException` is thrown, but there is a possibility to override the type with `CustomCastException` setting:
+The generator will generate `Cast` functions, which "force" to get a defined union case or throws an exception. By
+default, `InvalidOperationException` is thrown, but there is a possibility to override the type
+with `CustomCastException` setting:
+
 ```csharp
 [Union(CustomCastException = typeof(MyException))]
 public partial record UnionWithCustomException
@@ -81,6 +95,7 @@ public partial record UnionWithCustomException
     static partial void Cases(int a, string b);
 }
 ```
+
 The selected type must be an exception with a constructor with three arguments
 
 ```csharp
@@ -98,30 +113,88 @@ public class MyException : Exception
 
 ### Serialization
 
-Due to generating fields and constructor with `private` modifier, the record can't be deserialized. As a workaround, `Union` attribute provides the ability to define a custom field and constructor attribute:
+Due to generating fields and constructor with `private` modifier, the record can't be deserialized as it is. To resolve this, 'Gundi' provides custom JSON converters:
+
+- `UnionJsonConverterFactory` for System.Text.Json
 
 ```csharp
-using Newtonsoft.Json; 
-namespace MyNamespace;
+using System.Text.Json;
 
-[Union(FieldAttribute = typeof(JsonPropertyAttribute), ConstructorAttribute = typeof(JsonConstructorAttribute))]
-public partial record UnionWithJsonAttributes<T>
+// (...)
+
+var options = new JsonSerializerOptions()
 {
-    static partial void Cases(int? a, string b, T generic);
-}
-```
+    Converters = {new UnionJsonConverterFactory()},
+    IncludeFields = true // mandatory if tuple is serialized
+};
 
-That defined union can be easily serialized:
+var union = SimpleUnion.A(5);
+var json = JsonSerializer.Serialize(union, options);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
 
-```csharp
-var union = UnionwithJsonAttributes<int>.Generic(5);
-var json = JsonSerializer.SerializeObject(union);
-Console.WriteLine(json); // prints {"tag":3,"a":null,"b":null,"generic":5}
-var deserialized = JsonSerializer.DeserializeObject<UnionwithJsonAttributes<int>>(json);
+var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json, options);
 Console.WriteLine(union == deserialized); // prints true
 ```
 
-`JsonPropertyAttribute` and `JsonConstructorAttribute` are attributes provided by `Newtonsoft.Json`. Currently, there is no possibility to use Microsoft's `System.Text.Json` serializer.
+- `UnionJsonNetConverter` for Newtonsoft.Json
+
+```csharp
+using Newtonsoft.Json;
+
+// (...)
+
+var settings = new JsonSerializerSettings();
+settings.Converters.Add(new UnionJsonNetConverter());
+
+var union = SimpleUnion.A(5);
+var json = JsonConvert.SerializeObject(union, settings);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
+
+var deserialized = JsonConvert.DeserializeObject<SimpleUnion>(json, settings);
+Console.WriteLine(union == deserialized); // prints true
+```
+
+The serialization model is a composition of two values:
+- `Case` of `string` for chosen case information,
+- `Fields` array to keep the value of a case.
+
+The model is compatible with Newtonosoft.Json's F# union converter and allows for deserializing F# union's JSON directly into generated union:
+
+```f#
+type FRecord = { X: int; Y: string }
+type MyFsharpUnion =
+    | A of int          // supports simple type
+    | B of string       // supports string
+    | F of FRecord      // supports F# record
+    | T of string * int // NOT SUPPORTS F# tuple
+```
+
+```c#
+[Union]
+public partial record CSharpUnion
+{
+    static partial void Cases(int a, string b, FRecord f, (string, int) t);
+}
+```
+
+```c#
+using Newtonsoft.Json;
+
+// (...)
+
+var settings = new JsonSerializerSettings();
+settings.Converters.Add(new UnionJsonNetConverter());
+
+var fUnion = MyFsharpUnion.NewA(5);
+var json = JsonConvert.SerializeObject(fUnion);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
+
+var output = JsonConvert.DeserializeObject<CSharpUnion>(json, settings);
+Console.WriteLine(output!.CastToA() == 5); // prints true
+```
+
+**NOTE:** F# tuple is **NOT** supported currently.
 
 ## License
+
 Licensed under the [MIT License](LICENSE.txt).

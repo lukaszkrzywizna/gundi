@@ -1,28 +1,28 @@
 #nullable enable
 
 using System;
+using Gundi;
 
 namespace {{ Union.Namespace }}
 {
+    //[System.Text.Json.Serialization.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.SystemConverter))]
+    //[Newtonsoft.Json.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.JsonNetConverter))]
     partial record {{ Union.FullDefinitionType }}
     {
-        {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
         private readonly byte tag;
         
         {{~ for c in Union.Cases ~}}
-        {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
         private readonly {{ c.Type }} {{ c.Name }};
         {{~ end ~}} 
         
         {{~ for c in Union.Cases ~}}
         public bool Is{{ c.PascalName }}() => tag == {{ c.Index }};
-        {{~ end ~}} 
-        
-        {{ if Union.Settings.ConstructorAttribute.IsDefined }}[{{ Union.Settings.ConstructorAttribute.TypeName }}]{{ end }}
+        {{~ end ~}}
+
         private {{ Union.TypeNameOnly }}(
-        {{- for c in Union.Cases }}
+        {{~ for c in Union.Cases ~}}
             {{ c.Type }} {{ c.Name }},
-        {{- end }}
+        {{~ end ~}}
             byte tag)
         {
             {{~ for c in Union.Cases ~}}
@@ -35,11 +35,7 @@ namespace {{ Union.Namespace }}
         public static {{ Union.TypeWithSimpleGeneric }} {{ c.PascalName }}({{ c.Type }} {{c.Name }}) 
             => new(
             {{~ for cc in Union.Cases ~}}
-                {{- if cc.Index == c.Index ~}}
-                {{ c.Name }}
-                {{- else ~}}
-                default!
-                {{- end ~}},
+                {{ if cc.Index == c.Index }}{{ c.Name }}{{ else }}default!{{- end -}},
             {{~ end ~}}
                 {{ c.Index }}
             );
@@ -124,5 +120,40 @@ namespace {{ Union.Namespace }}
                   {{~ end ~}}
 
         {{~ end ~}}
+        
+        public class Converter : JsonConverter<{{ Union.FullDefinitionType }}>
+        {
+            public override {{ Union.FullDefinitionType }}? NullValue => null;
+            public override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
+            {
+                var obj = value.Match(
+                    {{~ for c in Union.Cases ~}}
+                    {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
+                    {{~ end ~}}
+                    );
+                return new JsonUnion(value.ActualCaseName(),  new [] { obj! });
+            }
+        
+            public override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
+            {
+                return caseName switch
+                {
+                    {{~ for c in Union.Cases ~}}
+                    "{{ c.PascalName }}" => {{ c.PascalName }}(({{ c.Type }})deserialize(typeof({{ c.Type }})!)),
+                    {{~ end ~}}
+                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
+                };
+            }
+        }
+        
+        public class SystemConverter : UnionJsonConverter<{{ Union.FullDefinitionType }}>
+        {
+            public SystemConverter() : base(new Converter()) { }
+        }
+        
+        public class JsonNetConverter : UnionJsonNetConverter<{{ Union.FullDefinitionType }}>
+        {
+            public JsonNetConverter() : base(new Converter()) { }
+        }
     }
 }

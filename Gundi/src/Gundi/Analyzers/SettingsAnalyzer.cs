@@ -11,11 +11,7 @@ internal static class SettingsAnalyzer
                 .Single(x => x.AttributeClass?.ToDisplayString() == UnionGenConsts.UnionAttributeName);
 
         var customException = GetCustomExceptionSettings(attribute);
-        var caseAttribute = GetUnionAttribute(attribute, nameof(UnionAttribute.FieldAttribute));
-        var ctorAttribute = GetUnionAttribute(attribute, nameof(UnionAttribute.ConstructorAttribute));
-
-        return AnalyzerResult.Compose(customException, caseAttribute, ctorAttribute,
-            (ex, c, ct) => new UnionSettings<INamedTypeSymbol?>(ex, c, ct));
+        return customException.Map(x => new UnionSettings<INamedTypeSymbol?>(x));
     }
 
     private static AnalyzerResult<INamedTypeSymbol?> GetCustomExceptionSettings(AttributeData attribute)
@@ -39,23 +35,9 @@ internal static class SettingsAnalyzer
                    (s.BaseType.Name == nameof(Exception) || CheckExceptionBaseType(s.BaseType));
         }
     }
-
-    private static AnalyzerResult<INamedTypeSymbol?> GetUnionAttribute(AttributeData attribute, string attributeName)
-    {
-        INamedTypeSymbol? typeSymbol = null;
-        var attr = attribute.NamedArguments.SingleOrDefault(x => x.Key == attributeName).Value;
-        if (!attr.IsNull && attr.Value is INamedTypeSymbol s)
-        {
-            //must be an attribute
-            typeSymbol = s;
-        }
-
-        return AnalyzerResult.NoDiagnose(typeSymbol);
-    }
 }
 
-internal record UnionSettings<T>(T CustomException, T CaseAttribute, T ConstructorAttribute)
+internal record UnionSettings<T>(T CustomException)
 {
-    public UnionSettings<TOut> Map<TOut>(Func<T, TOut> mapper)
-        => new(mapper(CustomException), mapper(CaseAttribute), mapper(ConstructorAttribute));
+    public UnionSettings<TOut> Map<TOut>(Func<T, TOut> mapper) => new(mapper(CustomException));
 }

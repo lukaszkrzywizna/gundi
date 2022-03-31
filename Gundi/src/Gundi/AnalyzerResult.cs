@@ -2,7 +2,11 @@ using Microsoft.CodeAnalysis;
 
 namespace Gundi;
 
-internal record AnalyzerResult<T>(IReadOnlyCollection<Diagnostic> Diagnostics, T Result);
+internal record AnalyzerResult<T>(IReadOnlyCollection<Diagnostic> Diagnostics, T Result)
+{
+    public AnalyzerResult<TOut> Map<TOut>(Func<T, TOut> mapper) => new(Diagnostics, mapper(Result));
+
+}
 
 internal static class AnalyzerResult
 {

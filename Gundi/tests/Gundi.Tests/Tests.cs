@@ -1,8 +1,7 @@
 using System.Globalization;
-using AnotherAssembly;
-using Gundi.Tests.Internal;
-using Newtonsoft.Json;
+using TestAssembly;
 using Xunit;
+
 namespace Gundi.Tests;
 
 public class Tests
@@ -31,7 +30,8 @@ public class Tests
             a => a.ToString(),
             b => b,
             c => c.ToString(CultureInfo.InvariantCulture),
-            d => d?.ToString());
+            d => d?.ToString()
+            );
 
         Assert.Equal("5", mapped);
         Assert.Equal("5", union.MatchA(x => x.ToString(), "default"));
@@ -67,17 +67,6 @@ public class Tests
         Assert.Contains($"Expected: {nameof(UnionWithCustomException.A)}", exB.Message);
         Assert.Contains($"Actual: {nameof(UnionWithCustomException.B)}", exB.Message);
     }
-    
-    [Fact]
-    public void UnionWithJsonAttributesAndGenericType_UnionCanBeSerializedAndDeserialized()
-    {
-        var union = UnionWithJsonAttributes<State<decimal>>.Generic(new State<decimal>(5));
-        var json = JsonConvert.SerializeObject(union);
-        Assert.Equal("{\"tag\":3,\"a\":null,\"b\":null,\"generic\":{\"Value\":5.0}}", json);
-        var deserialized = JsonConvert.DeserializeObject<UnionWithJsonAttributes<State<decimal>?>>(json);
-        Assert.True(deserialized!.IsGeneric());
-        Assert.Equal(new State<decimal>(5), deserialized.CastToGeneric());
-    }
 }
 
 [Union]
@@ -90,10 +79,4 @@ public partial record SimpleUnion
 public partial record UnionWithCustomException
 {
     static partial void Cases(int a, string b);
-}
-
-[Union(FieldAttribute = typeof(JsonPropertyAttribute), ConstructorAttribute = typeof(JsonConstructorAttribute))]
-public partial record UnionWithJsonAttributes<T>
-{
-    static partial void Cases(int? a, string b, T generic);
 }

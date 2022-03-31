@@ -7,6 +7,7 @@
         <Nullable>enable</Nullable>
         <GenerateProgramFile>false</GenerateProgramFile>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <IsPackable>false</IsPackable>
         <!-- Uncomment to see generated files -->
 <!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
 <!--        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
@@ -15,7 +16,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Gundi.Attributes\Gundi.Attributes.csproj" />
         <ProjectReference Include="..\..\src\Gundi\Gundi.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\AnotherAssembly\AnotherAssembly.csproj" />
+        <ProjectReference Include="..\TestAssembly\TestAssembly.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

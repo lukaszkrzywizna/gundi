@@ -10,12 +10,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E7E74A29
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gundi.Tests", "tests\Gundi.Tests\Gundi.Tests.csproj", "{D3111C5A-1C42-45A6-AE6C-CC6A0917869D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnotherAssembly", "tests\AnotherAssembly\AnotherAssembly.csproj", "{F63D9E6E-5016-45B2-B5B7-56336AAC6C70}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A6796D2D-2AE5-409A-849C-17E7088BB1A8}"
 	ProjectSection(SolutionItems) = preProject
 		..\README.md = ..\README.md
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TestAssembly", "tests\TestAssembly\TestAssembly.fsproj", "{B70B4DC6-1981-4BB5-94C2-1D6CBFB69F10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,15 +36,15 @@ Global
 		{D3111C5A-1C42-45A6-AE6C-CC6A0917869D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3111C5A-1C42-45A6-AE6C-CC6A0917869D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3111C5A-1C42-45A6-AE6C-CC6A0917869D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F63D9E6E-5016-45B2-B5B7-56336AAC6C70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F63D9E6E-5016-45B2-B5B7-56336AAC6C70}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F63D9E6E-5016-45B2-B5B7-56336AAC6C70}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F63D9E6E-5016-45B2-B5B7-56336AAC6C70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B70B4DC6-1981-4BB5-94C2-1D6CBFB69F10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B70B4DC6-1981-4BB5-94C2-1D6CBFB69F10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B70B4DC6-1981-4BB5-94C2-1D6CBFB69F10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B70B4DC6-1981-4BB5-94C2-1D6CBFB69F10}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8038AE57-1363-496C-8174-9E8167ADAF14} = {20848060-9811-435E-91C9-6B3FCEDB0726}
 		{3E4D2299-0026-4C00-B024-6D76A885874F} = {20848060-9811-435E-91C9-6B3FCEDB0726}
 		{D3111C5A-1C42-45A6-AE6C-CC6A0917869D} = {E7E74A29-D5CF-40DC-8B21-C605DB573193}
-		{F63D9E6E-5016-45B2-B5B7-56336AAC6C70} = {E7E74A29-D5CF-40DC-8B21-C605DB573193}
+		{B70B4DC6-1981-4BB5-94C2-1D6CBFB69F10} = {E7E74A29-D5CF-40DC-8B21-C605DB573193}
 	EndGlobalSection
 EndGlobal

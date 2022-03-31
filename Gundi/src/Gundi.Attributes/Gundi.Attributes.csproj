@@ -6,6 +6,11 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Gundi</RootNamespace>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    </ItemGroup>
 
 </Project>

@@ -56,8 +56,8 @@ internal class UnionGenerator : IIncrementalGenerator
 
     private static GeneratedUnion? GenerateUnion(INamedTypeSymbol symbol)
     {
-        var attributeSettings = SettingsAnalyzer.GetUnionSettings(symbol);
-        var anyError = attributeSettings.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error);
+        var settings = SettingsAnalyzer.GetUnionSettings(symbol);
+        var anyError = settings.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error);
 
         if (anyError)
             return null;
@@ -66,12 +66,16 @@ internal class UnionGenerator : IIncrementalGenerator
 
         var namespaceType = symbol.ContainingNamespace.ToDisplayString();
 
+        var simpleType = symbol.ToDisplayString(TypeFormats.SimpleTypeFormat);
         var input = new TemplateInput(
             new Union(
                 namespaceType, symbol.ToDisplayString(TypeFormats.RecordTypeFormat),
-                symbol.ToDisplayString(TypeFormats.SimpleTypeFormat),
+                simpleType,
                 symbol.ToDisplayString(TypeFormats.TypeWithSimpleGeneric),
-                attributeSettings.Result.Map(x =>
+                symbol.IsGenericType
+                    ? simpleType + $"<{string.Join(',', Enumerable.Range(0, symbol.TypeArguments.Length - 1))}>"
+                    : simpleType,
+                settings.Result.Map(x =>
                     new TypeAttribute(x?.ToDisplayString(TypeFormats.ParameterTypeFormat) ?? string.Empty,
                         x is not null)),
                 cases
