@@ -1,15 +1,11 @@
 #nullable enable
 
 using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 using Gundi;
 
 namespace {{ Union.Namespace }}
 {
-    [System.Text.Json.Serialization.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.Converter))]
+    [System.Text.Json.Serialization.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.SystemConverter))]
     [Newtonsoft.Json.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.JsonNetConverter))]
     partial record {{ Union.FullDefinitionType }}
     {
@@ -125,20 +121,20 @@ namespace {{ Union.Namespace }}
 
         {{~ end ~}}
         
-        public class Converter : UnionJsonConverter<{{ Union.FullDefinitionType }}>
+        public class Converter : JsonConverter<{{ Union.FullDefinitionType }}>
         {
-            protected override {{ Union.FullDefinitionType }}? NullValue => null;
-            protected override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
+            public override {{ Union.FullDefinitionType }}? NullValue => null;
+            public override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
             {
                 var obj = value.Match(
                     {{~ for c in Union.Cases ~}}
                     {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
                     {{~ end ~}}
                     );
-                return new JsonUnion(value.ActualCaseName(), obj!);
+                return new JsonUnion(value.ActualCaseName(),  new [] { obj! });
             }
         
-            protected override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
+            public override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
             {
                 return caseName switch
                 {
@@ -150,28 +146,14 @@ namespace {{ Union.Namespace }}
             }
         }
         
+        public class SystemConverter : UnionJsonConverter<{{ Union.FullDefinitionType }}>
+        {
+            public SystemConverter() : base(new Converter()) { }
+        }
+        
         public class JsonNetConverter : UnionJsonNetConverter<{{ Union.FullDefinitionType }}>
         {
-            protected override {{ Union.FullDefinitionType }}? NullValue => null;
-            protected override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
-            {
-                var obj = value.Match(
-                    {{~ for c in Union.Cases ~}}
-                    {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
-                    {{~ end ~}}
-                    );
-                return new JsonUnion(value.ActualCaseName(), obj!);
-            }
-            protected override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
-            {
-                return caseName switch
-                {
-                    {{~ for c in Union.Cases ~}}
-                    "{{ c.PascalName }}" => {{ c.PascalName }}(({{ c.Type }})deserialize(typeof({{ c.Type }})!)),
-                    {{~ end ~}}
-                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
-                };
-            }
+            public JsonNetConverter() : base(new Converter()) { }
         }
     }
 }

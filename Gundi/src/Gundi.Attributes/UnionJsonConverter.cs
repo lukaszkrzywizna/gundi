@@ -2,28 +2,26 @@ using System.Text.Json;
 
 namespace Gundi;
 
-public class Converter<T>
+public class UnionJsonConverter<T> : System.Text.Json.Serialization.JsonConverter<T>
 {
-    
-}
+    private readonly JsonConverter<T> _jsonConverter;
 
-public abstract class UnionJsonConverter<T> : System.Text.Json.Serialization.JsonConverter<T>
-{
+    public UnionJsonConverter(JsonConverter<T> jsonConverter)
+    {
+        _jsonConverter = jsonConverter;
+    }
+    
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.Null) return NullValue;
+        if (reader.TokenType == JsonTokenType.Null) return _jsonConverter.NullValue;
         var value = JsonSerializer.Deserialize<JsonUnion>(ref reader, options);
-        var caseValue = (JsonElement) value!.Value;
+        var caseValue = (JsonElement) value!.Value.Single();
         object Deserialize(Type t) => caseValue.Deserialize(t, options)!;
-        return UnionResolver(value.Case, Deserialize);
+        return _jsonConverter.UnionResolver(value.Case, Deserialize);
     }
             
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, MapToJsonUnion(value));
+        JsonSerializer.Serialize(writer, _jsonConverter.MapToJsonUnion(value));
     }
-
-    protected abstract JsonUnion MapToJsonUnion(T value);
-    protected abstract T UnionResolver(string caseName, Func<Type, object> deserialize);
-    protected abstract T? NullValue { get; }
 }

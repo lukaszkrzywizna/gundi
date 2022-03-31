@@ -2,11 +2,14 @@ using Newtonsoft.Json;
 
 namespace Gundi;
 
-public abstract class UnionJsonNetConverter<T> : JsonConverter<T>
+public class UnionJsonNetConverter<T> : Newtonsoft.Json.JsonConverter<T>
 {
-    protected abstract T? NullValue { get; }
-    protected abstract JsonUnion MapToJsonUnion(T value);
-    protected abstract T UnionResolver(string caseName, Func<Type, object> deserialize);
+    private readonly JsonConverter<T> _jsonConverter;
+
+    public UnionJsonNetConverter(JsonConverter<T> jsonConverter)
+    {
+        _jsonConverter = jsonConverter;
+    }
     
     public override T? ReadJson(JsonReader reader, Type objectType, T? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
@@ -16,7 +19,7 @@ public abstract class UnionJsonNetConverter<T> : JsonConverter<T>
                     propertyName, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException();
         }
-        if (reader.TokenType == JsonToken.Null) return NullValue;
+        if (reader.TokenType == JsonToken.Null) return _jsonConverter.NullValue;
         reader.Read();
         AssertMatchedProperty(nameof(JsonUnion.Case));
         var caseName = reader.ReadAsString();
@@ -24,7 +27,7 @@ public abstract class UnionJsonNetConverter<T> : JsonConverter<T>
         AssertMatchedProperty(nameof(JsonUnion.Value));
         reader.Read();
         object Deserialize(Type t) => serializer.Deserialize(reader, t)!;
-        var result = UnionResolver(caseName!, Deserialize);
+        var result = _jsonConverter.UnionResolver(caseName!, Deserialize);
         reader.Read();
         return result;
     }
@@ -36,6 +39,6 @@ public abstract class UnionJsonNetConverter<T> : JsonConverter<T>
             writer.WriteNull();
             return;
         }
-        serializer.Serialize(writer, MapToJsonUnion(value));
+        serializer.Serialize(writer, _jsonConverter.MapToJsonUnion(value));
     }
 }
