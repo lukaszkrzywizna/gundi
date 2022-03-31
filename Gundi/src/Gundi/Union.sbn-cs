@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace {{ Union.Namespace }}
 {
-    
+    [System.Text.Json.Serialization.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.Converter))]
     partial record {{ Union.FullDefinitionType }}
     {
         {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
@@ -19,13 +19,15 @@ namespace {{ Union.Namespace }}
         
         {{~ for c in Union.Cases ~}}
         public bool Is{{ c.PascalName }}() => tag == {{ c.Index }};
-        {{~ end ~}} 
-        
-        {{ if Union.Settings.ConstructorAttribute.IsDefined }}[{{ Union.Settings.ConstructorAttribute.TypeName }}]{{ end }}
+        {{~ end ~}}
+
+        {{~ if Union.Settings.ConstructorAttribute.IsDefined ~}}
+        [{{~ Union.Settings.ConstructorAttribute.TypeName ~}}]
+        {{~ end ~}}
         private {{ Union.TypeNameOnly }}(
-        {{- for c in Union.Cases }}
+        {{~ for c in Union.Cases ~}}
             {{ c.Type }} {{ c.Name }},
-        {{- end }}
+        {{~ end ~}}
             byte tag)
         {
             {{~ for c in Union.Cases ~}}
@@ -38,11 +40,7 @@ namespace {{ Union.Namespace }}
         public static {{ Union.TypeWithSimpleGeneric }} {{ c.PascalName }}({{ c.Type }} {{c.Name }}) 
             => new(
             {{~ for cc in Union.Cases ~}}
-                {{- if cc.Index == c.Index ~}}
-                {{ c.Name }}
-                {{- else ~}}
-                default!
-                {{- end ~}},
+                {{ if cc.Index == c.Index }}{{ c.Name }}{{ else }}default!{{- end -}},
             {{~ end ~}}
                 {{ c.Index }}
             );
@@ -128,7 +126,7 @@ namespace {{ Union.Namespace }}
 
         {{~ end ~}}
         
-        public class Converter : System.Text.Json.Serialization.JsonConverter<{{ Union.FullDefinitionType }}>
+        private class Converter : System.Text.Json.Serialization.JsonConverter<{{ Union.FullDefinitionType }}>
         {
             private record JsonUnion(string Case, object Value);
             

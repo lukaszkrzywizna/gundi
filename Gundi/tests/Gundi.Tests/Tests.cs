@@ -38,8 +38,8 @@ public abstract record MyOption
 internal record JsonUnion(string Case, object Value);
 
 
-//[System.Text.Json.Serialization.JsonConverter(typeof(UnionConverter))]
-// [Newtonsoft.Json.JsonConverter(typeof(UnionJConverter))]
+[System.Text.Json.Serialization.JsonConverter(typeof(Union<>.Converter))]
+[Newtonsoft.Json.JsonConverter(typeof(Union<>.UnionJConverter))]
 [Serializable]
 public record Union<T>
 {
@@ -116,6 +116,12 @@ public record Union<T>
 
     private class UnionJConverter : Newtonsoft.Json.JsonConverter<Union<T>>
     {
+        private Func<string, Func<Type, object>, Union<T>>? _caseResolver;
+
+        public UnionJConverter(Func<string, Func<Type, object>, Union<T>>? caseResolver = null)
+        {
+            _caseResolver = caseResolver;
+        }
         public override Union<T>? ReadJson(JsonReader reader, Type objectType, Union<T>? existingValue, bool hasExistingValue,
             Newtonsoft.Json.JsonSerializer serializer)
         {
@@ -133,12 +139,24 @@ public record Union<T>
             reader.Read();
             AssertMatchedProperty(nameof(JsonUnion.Value));
             reader.Read();
-            var result = caseName switch
+            object Deserialize(Type t) => serializer.Deserialize(reader, t)!;
+            _caseResolver = (caseName, deserialize) =>
             {
-                "A" => A(serializer.Deserialize<int>(reader)!),
-                "B" => B(serializer.Deserialize<Testa>(reader)!),
-                _ => throw new InvalidOperationException()
+                return caseName switch
+                {
+                    "A" => A((int) deserialize(typeof(int))),
+                    "B" => A((int) deserialize(typeof(Testa))),
+                    _ => throw new InvalidOperationException()
+                };
             };
+            var result = _caseResolver(caseName!, Deserialize);
+
+            // var result = caseName switch
+            // {
+            //     "A" => A(Deserialize<int>()),
+            //     "B" => B(Deserialize<Testa>()),
+            //     _ => throw new InvalidOperationException()
+            // };
             reader.Read();
             return result;
         }
@@ -167,22 +185,8 @@ public class UnionConverterFactory : JsonConverterFactory
             var g = t!.MakeGenericType(typeToConvert.GenericTypeArguments);
             return (JsonConverter) Activator.CreateInstance(g)!;
         }
-        else
-        {
-            return (JsonConverter) Activator.CreateInstance(t!)!;
-        }
-        return (JsonConverter)Activator.CreateInstance(t!)!;
-        // if (typeToConvert.IsGenericType && typeof(Union<>) == typeToConvert.GetGenericTypeDefinition())
-        // {
-        //     var t = typeToConvert.GetNestedType("UnionConverter")!; //typeof(Union<>.UnionConverter);
-        //     //t.DeclaringType.GetCustomAttributes(typeof(UnionAttribute), true).Any() && base type is JsonConvert
-        //     //var c = t.MakeGenericType(typeToConvert.GenericTypeArguments);
-        //     var x = Activator.CreateInstance(t);
-        //     return (JsonConverter) x!;
-        // }
-        // if (typeof(SimpleUnion) == typeToConvert) return new SimpleUnion.Converter();
-        //if (typeToConvert.IsGenericType && typeof(UnionWithJsonAttributes<>) == typeToConvert.GetGenericTypeDefinition()) return UnionWithJsonAttributes<>.
-        return null;
+
+        return (JsonConverter) Activator.CreateInstance(t!)!;
     }
 }
 
@@ -200,7 +204,7 @@ public class Tests
         //try to prepare converter for all types with union attribute
         var opt = new JsonSerializerOptions();
         
-        opt.Converters.Add(new UnionConverterFactory());
+        // opt.Converters.Add(new UnionConverterFactory());
         var jsu = JsonSerializer.Serialize(su, opt);
         
         var tt = JsonConvert.SerializeObject(testa);
