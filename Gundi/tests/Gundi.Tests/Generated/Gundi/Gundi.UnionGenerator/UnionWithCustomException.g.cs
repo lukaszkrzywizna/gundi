@@ -3,10 +3,14 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
+using Gundi;
 
 namespace Gundi.Tests
 {
     [System.Text.Json.Serialization.JsonConverter(typeof(UnionWithCustomException.Converter))]
+    [Newtonsoft.Json.JsonConverter(typeof(UnionWithCustomException.NewtonsoftConverter))]
     partial record UnionWithCustomException
     {
         
@@ -123,8 +127,6 @@ namespace Gundi.Tests
         
         private class Converter : System.Text.Json.Serialization.JsonConverter<UnionWithCustomException>
         {
-            private record JsonUnion(string Case, object Value);
-            
             public override UnionWithCustomException? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
                 if (reader.TokenType == JsonTokenType.Null) return null;
@@ -145,6 +147,49 @@ namespace Gundi.Tests
                     b => b as object
                     );
                 JsonSerializer.Serialize(writer, new JsonUnion(value.ActualCaseName(), obj!));
+            }
+        }
+        
+        private class NewtonsoftConverter : Newtonsoft.Json.JsonConverter<UnionWithCustomException>
+        {
+            public override UnionWithCustomException? ReadJson(JsonReader reader, Type objectType, UnionWithCustomException? existingValue, bool hasExistingValue,
+                Newtonsoft.Json.JsonSerializer serializer)
+            {
+                void AssertMatchedProperty(string propertyName)
+                {
+                    if (reader.TokenType != JsonToken.PropertyName || !string.Equals(reader.Value!.ToString(),
+                            propertyName, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException();
+                }
+                if (reader.TokenType == JsonToken.Null) return null;
+                reader.Read();
+                AssertMatchedProperty(nameof(JsonUnion.Case));
+                var caseName = reader.ReadAsString();
+                reader.Read();
+                AssertMatchedProperty(nameof(JsonUnion.Value));
+                reader.Read();
+                TCase Deserialize<TCase>() => serializer.Deserialize<TCase>(reader)!;
+                var result = caseName switch
+                {
+                    "A" => A(Deserialize<System.Int32>()),
+                    "B" => B(Deserialize<System.String>()),
+                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
+                };
+                reader.Read();
+                return result;
+            }
+            public override void WriteJson(JsonWriter writer, UnionWithCustomException? value, Newtonsoft.Json.JsonSerializer serializer)
+            {
+                if (value is null)
+                { 
+                    writer.WriteNull();
+                    return;
+                }
+                var obj = value.Match(
+                    a => a as object,
+                    b => b as object
+                    );
+                serializer.Serialize(writer, new JsonUnion(value!.ActualCaseName(), obj!));
             }
         }
     }

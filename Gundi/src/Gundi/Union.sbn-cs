@@ -3,10 +3,14 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
+using Gundi;
 
 namespace {{ Union.Namespace }}
 {
     [System.Text.Json.Serialization.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.Converter))]
+    [Newtonsoft.Json.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.NewtonsoftConverter))]
     partial record {{ Union.FullDefinitionType }}
     {
         {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
@@ -128,8 +132,6 @@ namespace {{ Union.Namespace }}
         
         private class Converter : System.Text.Json.Serialization.JsonConverter<{{ Union.FullDefinitionType }}>
         {
-            private record JsonUnion(string Case, object Value);
-            
             public override {{ Union.FullDefinitionType }}? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
                 if (reader.TokenType == JsonTokenType.Null) return null;
@@ -152,6 +154,51 @@ namespace {{ Union.Namespace }}
                     {{~ end ~}}
                     );
                 JsonSerializer.Serialize(writer, new JsonUnion(value.ActualCaseName(), obj!));
+            }
+        }
+        
+        private class NewtonsoftConverter : Newtonsoft.Json.JsonConverter<{{ Union.FullDefinitionType }}>
+        {
+            public override {{ Union.FullDefinitionType }}? ReadJson(JsonReader reader, Type objectType, {{ Union.FullDefinitionType }}? existingValue, bool hasExistingValue,
+                Newtonsoft.Json.JsonSerializer serializer)
+            {
+                void AssertMatchedProperty(string propertyName)
+                {
+                    if (reader.TokenType != JsonToken.PropertyName || !string.Equals(reader.Value!.ToString(),
+                            propertyName, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException();
+                }
+                if (reader.TokenType == JsonToken.Null) return null;
+                reader.Read();
+                AssertMatchedProperty(nameof(JsonUnion.Case));
+                var caseName = reader.ReadAsString();
+                reader.Read();
+                AssertMatchedProperty(nameof(JsonUnion.Value));
+                reader.Read();
+                TCase Deserialize<TCase>() => serializer.Deserialize<TCase>(reader)!;
+                var result = caseName switch
+                {
+                    {{~ for c in Union.Cases ~}}
+                    "{{ c.PascalName }}" => {{ c.PascalName }}(Deserialize<{{ c.Type }}>()),
+                    {{~ end ~}}
+                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
+                };
+                reader.Read();
+                return result;
+            }
+            public override void WriteJson(JsonWriter writer, {{ Union.FullDefinitionType }}? value, Newtonsoft.Json.JsonSerializer serializer)
+            {
+                if (value is null)
+                { 
+                    writer.WriteNull();
+                    return;
+                }
+                var obj = value.Match(
+                    {{~ for c in Union.Cases ~}}
+                    {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
+                    {{~ end ~}}
+                    );
+                serializer.Serialize(writer, new JsonUnion(value!.ActualCaseName(), obj!));
             }
         }
     }
