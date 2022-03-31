@@ -24,10 +24,20 @@ public class UnionJsonNetConverter<T> : Newtonsoft.Json.JsonConverter<T>
         AssertMatchedProperty(nameof(JsonUnion.Case));
         var caseName = reader.ReadAsString();
         reader.Read();
-        AssertMatchedProperty(nameof(JsonUnion.Value));
+        AssertMatchedProperty(nameof(JsonUnion.Fields));
         reader.Read();
+        if (reader.TokenType != JsonToken.StartArray)
+            throw new JsonSerializationException("Missing an array for a union's fields");
+        reader.Read();
+        if (reader.TokenType != JsonToken.StartObject)
+            throw new JsonSerializationException(
+                "Union's fields can only contain an single object. F# union case tuple is not supported.");
         object Deserialize(Type t) => serializer.Deserialize(reader, t)!;
         var result = _jsonConverter.UnionResolver(caseName!, Deserialize);
+        reader.Read();
+        if (reader.TokenType != JsonToken.EndArray)
+            throw new JsonSerializationException(
+                "Missing a end array for a union's fields. Probable array has more elements than one.");
         reader.Read();
         return result;
     }

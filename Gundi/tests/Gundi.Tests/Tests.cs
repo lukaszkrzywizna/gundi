@@ -181,17 +181,13 @@ public class Tests
     [Fact]
     public void UnionWithSimpleTypes_FactoryAndCheckMethodsGenerated()
     {
-        var testa = new Testa(5);
-
-        var su = SimpleUnion.A(5);
-
-        //try to prepare converter for all types with union attribute
-        
-        // opt.Converters.Add(new UnionConverterFactory());
-        var jsu = JsonSerializer.Serialize(su);
-        
-        var tt = JsonConvert.SerializeObject(testa);
-        var ttt = JsonSerializer.Serialize(testa);
+        var su = SimpleUnion.Tuple((5, "5"));
+        var ttt = JsonSerializer.Serialize(su);
+        var unttt = JsonSerializer.Deserialize<SimpleUnion>(ttt);
+        var tt = JsonConvert.SerializeObject(su);
+        var withoutNames = "{\"Case\":\"Tuple\",\"Fields\":[5, \"5\"]}";
+        JsonSerializer.Deserialize<SimpleUnion>(withoutNames);
+        var untt = JsonConvert.DeserializeObject<SimpleUnion>(withoutNames);
         
         //var uu = Union<int>.B(testa);
         // var jc = JsonConvert.SerializeObject(uu);
@@ -222,7 +218,8 @@ public class Tests
             a => a.ToString(),
             b => b,
             c => c.ToString(CultureInfo.InvariantCulture),
-            d => d?.ToString());
+            d => d?.ToString(),
+            t => t.ToString());
 
         Assert.Equal("5", mapped);
         Assert.Equal("5", union.MatchA(x => x.ToString(), "default"));
@@ -239,7 +236,8 @@ public class Tests
             a => a,
             b => b,
             c => c,
-            d => d);
+            d => d,
+            t => t);
 
         Assert.Equal(union, mapped);
     }
@@ -274,7 +272,7 @@ public class Tests
 [Union]
 public partial record SimpleUnion
 {
-    static partial void Cases(int a, string b, decimal c, int? d);
+    static partial void Cases(int a, string b, decimal c, int? d, (int, string) tuple);
 }
 
 [Union(CustomCastException = typeof(MyException))]

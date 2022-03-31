@@ -9,8 +9,8 @@
         <WarningsAsErrors>Nullable</WarningsAsErrors>
         <IsPackable>false</IsPackable>
         <!-- Uncomment to see generated files -->
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+<!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
+<!--        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
     </PropertyGroup>
 
     <ItemGroup>

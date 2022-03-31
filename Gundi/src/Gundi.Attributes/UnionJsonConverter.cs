@@ -15,7 +15,10 @@ public class UnionJsonConverter<T> : System.Text.Json.Serialization.JsonConverte
     {
         if (reader.TokenType == JsonTokenType.Null) return _jsonConverter.NullValue;
         var value = JsonSerializer.Deserialize<JsonUnion>(ref reader, options);
-        var caseValue = (JsonElement) value!.Value.Single();
+        if(value!.Fields.Length != 1)
+            throw new JsonException(
+                "Union's fields can only contain an single object. F# union case tuple is not supported.");
+        var caseValue = (JsonElement) value.Fields.Single();
         object Deserialize(Type t) => caseValue.Deserialize(t, options)!;
         return _jsonConverter.UnionResolver(value.Case, Deserialize);
     }
