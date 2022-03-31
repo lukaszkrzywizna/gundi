@@ -6,7 +6,7 @@ namespace Gundi.Tests;
 
 public static class UnionJsonSerializer
 {
-    private static readonly JsonSerializerOptions Options = new JsonSerializerOptions()
+    private static readonly JsonSerializerOptions Options = new()
     {
         Converters =
         {
@@ -15,7 +15,7 @@ public static class UnionJsonSerializer
         IncludeFields = true
     };
 
-    public static string? Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
+    public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
     public static T? Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options);
 }
 

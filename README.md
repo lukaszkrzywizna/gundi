@@ -113,32 +113,87 @@ public class MyException : Exception
 
 ### Serialization
 
-Due to generating fields and constructor with `private` modifier, the record can't be deserialized. As a
-workaround, `Union` attribute provides the ability to define a custom field and constructor attribute:
+Due to generating fields and constructor with `private` modifier, the record can't be deserialized as it is. To resolve this, 'Gundi' provides custom JSON converters:
+
+- `UnionJsonConverterFactory` for System.Text.Json
 
 ```csharp
-using Newtonsoft.Json; 
-namespace MyNamespace;
+using System.Text.Json;
 
-[Union(FieldAttribute = typeof(JsonPropertyAttribute), ConstructorAttribute = typeof(JsonConstructorAttribute))]
-public partial record UnionWithJsonAttributes<T>
+// (...)
+
+var options = new JsonSerializerOptions()
 {
-    static partial void Cases(int? a, string b, T generic);
-}
-```
+    Converters = {new UnionJsonConverterFactory()},
+    IncludeFields = true // mandatory if tuple is serialized
+};
 
-That defined union can be easily serialized:
+var union = SimpleUnion.A(5);
+var json = JsonSerializer.Serialize(union, options);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
 
-```csharp
-var union = UnionwithJsonAttributes<int>.Generic(5);
-var json = JsonSerializer.SerializeObject(union);
-Console.WriteLine(json); // prints {"tag":3,"a":null,"b":null,"generic":5}
-var deserialized = JsonSerializer.DeserializeObject<UnionwithJsonAttributes<int>>(json);
+var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json, options);
 Console.WriteLine(union == deserialized); // prints true
 ```
 
-`JsonPropertyAttribute` and `JsonConstructorAttribute` are attributes provided by `Newtonsoft.Json`. Currently, there is
-no possibility to use Microsoft's `System.Text.Json` serializer.
+- `UnionJsonNetConverter` for Newtonsoft.Json
+
+```csharp
+using Newtonsoft.Json;
+
+// (...)
+
+var settings = new JsonSerializerSettings();
+settings.Converters.Add(new UnionJsonNetConverter());
+
+var union = SimpleUnion.A(5);
+var json = JsonConvert.SerializeObject(union, settings);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
+
+var deserialized = JsonConvert.DeserializeObject<SimpleUnion>(json, settings);
+Console.WriteLine(union == deserialized); // prints true
+```
+
+The serialization model is a composition of two values:
+- `Case` of `string` for chosen case information,
+- `Fields` array to keep the value of a case.
+
+The model is compatible with Newtonosoft.Json's F# union converter and allows for deserializing F# union's JSON directly into generated union:
+
+```f#
+type FRecord = { X: int; Y: string }
+type MyFsharpUnion =
+    | A of int          // supports simple type
+    | B of string       // supports string
+    | F of FRecord      // supports F# record
+    | T of string * int // NOT SUPPORTS F# tuple
+```
+
+```c#
+[Union]
+public partial record CSharpUnion
+{
+    static partial void Cases(int a, string b, FRecord f, (string, int) t);
+}
+```
+
+```c#
+using Newtonsoft.Json;
+
+// (...)
+
+var settings = new JsonSerializerSettings();
+settings.Converters.Add(new UnionJsonNetConverter());
+
+var fUnion = MyFsharpUnion.NewA(5);
+var json = JsonConvert.SerializeObject(fUnion);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
+
+var output = JsonConvert.DeserializeObject<CSharpUnion>(json, settings);
+Console.WriteLine(output!.CastToA() == 5); // prints true
+```
+
+**NOTE:** F# tuple is **NOT** supported currently.
 
 ## License
 
