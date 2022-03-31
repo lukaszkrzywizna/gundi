@@ -56,8 +56,8 @@ internal class UnionGenerator : IIncrementalGenerator
 
     private static GeneratedUnion? GenerateUnion(INamedTypeSymbol symbol)
     {
-        var attributeSettings = SettingsAnalyzer.GetUnionSettings(symbol);
-        var anyError = attributeSettings.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error);
+        var settings = SettingsAnalyzer.GetUnionSettings(symbol);
+        var anyError = settings.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error);
 
         if (anyError)
             return null;
@@ -75,7 +75,7 @@ internal class UnionGenerator : IIncrementalGenerator
                 symbol.IsGenericType
                     ? simpleType + $"<{string.Join(',', Enumerable.Range(0, symbol.TypeArguments.Length - 1))}>"
                     : simpleType,
-                attributeSettings.Result.Map(x =>
+                settings.Result.Map(x =>
                     new TypeAttribute(x?.ToDisplayString(TypeFormats.ParameterTypeFormat) ?? string.Empty,
                         x is not null)),
                 cases

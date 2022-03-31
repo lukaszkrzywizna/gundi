@@ -10,14 +10,12 @@ using Gundi;
 namespace {{ Union.Namespace }}
 {
     [System.Text.Json.Serialization.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.Converter))]
-    [Newtonsoft.Json.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.NewtonsoftConverter))]
+    [Newtonsoft.Json.JsonConverter(typeof({{ Union.TypeWithOpenGeneric }}.JsonNetConverter))]
     partial record {{ Union.FullDefinitionType }}
     {
-        {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
         private readonly byte tag;
         
         {{~ for c in Union.Cases ~}}
-        {{ if Union.Settings.CaseAttribute.IsDefined }}[{{ Union.Settings.CaseAttribute.TypeName }}]{{ end }}
         private readonly {{ c.Type }} {{ c.Name }};
         {{~ end ~}} 
         
@@ -25,9 +23,6 @@ namespace {{ Union.Namespace }}
         public bool Is{{ c.PascalName }}() => tag == {{ c.Index }};
         {{~ end ~}}
 
-        {{~ if Union.Settings.ConstructorAttribute.IsDefined ~}}
-        [{{~ Union.Settings.ConstructorAttribute.TypeName ~}}]
-        {{~ end ~}}
         private {{ Union.TypeNameOnly }}(
         {{~ for c in Union.Cases ~}}
             {{ c.Type }} {{ c.Name }},
@@ -130,75 +125,52 @@ namespace {{ Union.Namespace }}
 
         {{~ end ~}}
         
-        private class Converter : System.Text.Json.Serialization.JsonConverter<{{ Union.FullDefinitionType }}>
+        public class Converter : UnionJsonConverter<{{ Union.FullDefinitionType }}>
         {
-            public override {{ Union.FullDefinitionType }}? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-            {
-                if (reader.TokenType == JsonTokenType.Null) return null;
-                var value = JsonSerializer.Deserialize<JsonUnion>(ref reader, options);
-                var caseValue = (JsonElement) value!.Value;
-                return value.Case switch
-                {
-                    {{~ for c in Union.Cases ~}}
-                    "{{ c.PascalName }}" => {{ c.PascalName }}(caseValue.Deserialize<{{ c.Type }}>(options)!),
-                    {{~ end ~}}
-                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), value.Case, "Union has undefined state!")
-                };
-            }
-        
-            public override void Write(Utf8JsonWriter writer, {{ Union.FullDefinitionType }} value, JsonSerializerOptions options)
+            protected override {{ Union.FullDefinitionType }}? NullValue => null;
+            protected override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
             {
                 var obj = value.Match(
                     {{~ for c in Union.Cases ~}}
                     {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
                     {{~ end ~}}
                     );
-                JsonSerializer.Serialize(writer, new JsonUnion(value.ActualCaseName(), obj!));
+                return new JsonUnion(value.ActualCaseName(), obj!);
             }
-        }
         
-        private class NewtonsoftConverter : Newtonsoft.Json.JsonConverter<{{ Union.FullDefinitionType }}>
-        {
-            public override {{ Union.FullDefinitionType }}? ReadJson(JsonReader reader, Type objectType, {{ Union.FullDefinitionType }}? existingValue, bool hasExistingValue,
-                Newtonsoft.Json.JsonSerializer serializer)
+            protected override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
             {
-                void AssertMatchedProperty(string propertyName)
-                {
-                    if (reader.TokenType != JsonToken.PropertyName || !string.Equals(reader.Value!.ToString(),
-                            propertyName, StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidOperationException();
-                }
-                if (reader.TokenType == JsonToken.Null) return null;
-                reader.Read();
-                AssertMatchedProperty(nameof(JsonUnion.Case));
-                var caseName = reader.ReadAsString();
-                reader.Read();
-                AssertMatchedProperty(nameof(JsonUnion.Value));
-                reader.Read();
-                TCase Deserialize<TCase>() => serializer.Deserialize<TCase>(reader)!;
-                var result = caseName switch
+                return caseName switch
                 {
                     {{~ for c in Union.Cases ~}}
-                    "{{ c.PascalName }}" => {{ c.PascalName }}(Deserialize<{{ c.Type }}>()),
+                    "{{ c.PascalName }}" => {{ c.PascalName }}(({{ c.Type }})deserialize(typeof({{ c.Type }})!)),
                     {{~ end ~}}
                     _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
                 };
-                reader.Read();
-                return result;
             }
-            public override void WriteJson(JsonWriter writer, {{ Union.FullDefinitionType }}? value, Newtonsoft.Json.JsonSerializer serializer)
+        }
+        
+        public class JsonNetConverter : UnionJsonNetConverter<{{ Union.FullDefinitionType }}>
+        {
+            protected override {{ Union.FullDefinitionType }}? NullValue => null;
+            protected override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
             {
-                if (value is null)
-                { 
-                    writer.WriteNull();
-                    return;
-                }
                 var obj = value.Match(
                     {{~ for c in Union.Cases ~}}
                     {{ c.Name }} => {{ c.Name }} as object{{ if c.Index != Union.Cases.size }},{{ end }}
                     {{~ end ~}}
                     );
-                serializer.Serialize(writer, new JsonUnion(value!.ActualCaseName(), obj!));
+                return new JsonUnion(value.ActualCaseName(), obj!);
+            }
+            protected override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
+            {
+                return caseName switch
+                {
+                    {{~ for c in Union.Cases ~}}
+                    "{{ c.PascalName }}" => {{ c.PascalName }}(({{ c.Type }})deserialize(typeof({{ c.Type }})!)),
+                    {{~ end ~}}
+                    _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
+                };
             }
         }
     }

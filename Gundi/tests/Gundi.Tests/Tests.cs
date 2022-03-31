@@ -271,7 +271,7 @@ public class Tests
     }
 }
 
-[Union(FieldAttribute = typeof(JsonPropertyAttribute), ConstructorAttribute = typeof(JsonConstructorAttribute))]
+[Union]
 public partial record SimpleUnion
 {
     static partial void Cases(int a, string b, decimal c, int? d);
@@ -283,7 +283,7 @@ public partial record UnionWithCustomException
     static partial void Cases(int a, string b);
 }
 
-[Union(FieldAttribute = typeof(JsonPropertyAttribute), ConstructorAttribute = typeof(JsonConstructorAttribute))]
+[Union]
 public partial record UnionWithJsonAttributes<T>
 {
     static partial void Cases(int? a, string b, T generic);

@@ -18,7 +18,7 @@ public class MyException : BaseException
     }
 }
 
-[Union(CustomCastException = typeof(MyException))]
+//[Union(CustomCastException = typeof(MyException))]
 public partial record MyAssemblyUnion
 {
     static partial void Cases(int a, string b);
