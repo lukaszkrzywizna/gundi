@@ -16,7 +16,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Gundi.Attributes\Gundi.Attributes.csproj" />
         <ProjectReference Include="..\..\src\Gundi\Gundi.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\AnotherAssembly\AnotherAssembly.csproj" />
+        <ProjectReference Include="..\TestAssembly\TestAssembly.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

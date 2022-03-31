@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Gundi;
 
@@ -25,6 +26,25 @@ public class UnionJsonConverter<T> : System.Text.Json.Serialization.JsonConverte
             
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, _jsonConverter.MapToJsonUnion(value));
+        JsonSerializer.Serialize(writer, _jsonConverter.MapToJsonUnion(value), options);
+    }
+}
+
+public class UnionJsonConverterFactory : JsonConverterFactory
+{
+    public override bool CanConvert(Type typeToConvert) => 
+        typeToConvert.GetCustomAttributes(typeof(UnionAttribute), true).Any();
+
+    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        var t = typeToConvert.GetNestedType("SystemConverter");
+
+        if (typeToConvert.IsGenericType)
+        {
+            var g = t!.MakeGenericType(typeToConvert.GenericTypeArguments);
+            return (JsonConverter) Activator.CreateInstance(g)!;
+        }
+
+        return (JsonConverter) Activator.CreateInstance(t!)!;
     }
 }

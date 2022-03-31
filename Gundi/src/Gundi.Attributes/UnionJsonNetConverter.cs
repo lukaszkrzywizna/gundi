@@ -29,15 +29,12 @@ public class UnionJsonNetConverter<T> : Newtonsoft.Json.JsonConverter<T>
         if (reader.TokenType != JsonToken.StartArray)
             throw new JsonSerializationException("Missing an array for a union's fields");
         reader.Read();
-        if (reader.TokenType != JsonToken.StartObject)
-            throw new JsonSerializationException(
-                "Union's fields can only contain an single object. F# union case tuple is not supported.");
         object Deserialize(Type t) => serializer.Deserialize(reader, t)!;
         var result = _jsonConverter.UnionResolver(caseName!, Deserialize);
         reader.Read();
         if (reader.TokenType != JsonToken.EndArray)
             throw new JsonSerializationException(
-                "Missing a end array for a union's fields. Probable array has more elements than one.");
+                "Union's fields can only contain an single object. F# union case tuple is not supported.");
         reader.Read();
         return result;
     }
@@ -50,5 +47,41 @@ public class UnionJsonNetConverter<T> : Newtonsoft.Json.JsonConverter<T>
             return;
         }
         serializer.Serialize(writer, _jsonConverter.MapToJsonUnion(value));
+    }
+}
+
+public class UnionJsonNetConverter : JsonConverter
+{
+    public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+    {
+        if (value is null)
+        {
+            writer.WriteNull();
+            return;
+        }
+        var converter = CreateConverter(value.GetType());
+        converter.WriteJson(writer, value, serializer);
+    }
+
+    public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+    {
+        var converter = CreateConverter(objectType);
+        return converter.ReadJson(reader, objectType, existingValue, serializer);
+    }
+
+    public override bool CanConvert(Type objectType)=> 
+        objectType.GetCustomAttributes(typeof(UnionAttribute), true).Any();
+    
+    private static JsonConverter CreateConverter(Type typeToConvert)
+    {
+        var t = typeToConvert.GetNestedType("JsonNetConverter");
+
+        if (typeToConvert.IsGenericType)
+        {
+            var g = t!.MakeGenericType(typeToConvert.GenericTypeArguments);
+            return (JsonConverter) Activator.CreateInstance(g)!;
+        }
+
+        return (JsonConverter) Activator.CreateInstance(t!)!;
     }
 }
