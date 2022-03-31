@@ -166,7 +166,7 @@ type MyFsharpUnion =
     | A of int          // supports simple type
     | B of string       // supports string
     | F of FRecord      // supports F# record
-    | T of string * int // NOT SUPPORTS F# tuple
+    | T of string * int // DOES NOT SUPPORT F# tuple
 ```
 
 ```c#
