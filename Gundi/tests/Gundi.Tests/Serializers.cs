@@ -4,6 +4,17 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Gundi.Tests;
 
+public static class SimpleJsonSerializer
+{
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        IncludeFields = true
+    };
+
+    public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
+    public static T? Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options);
+}
+
 public static class UnionJsonSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
@@ -17,6 +28,19 @@ public static class UnionJsonSerializer
 
     public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
     public static T? Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options);
+}
+
+public static class SimpleJsonConvert
+{
+    static SimpleJsonConvert()
+    {
+        Options = new JsonSerializerSettings();
+    }
+    
+    private static readonly JsonSerializerSettings Options;
+
+    public static string SerializeObject<T>(T value) => JsonConvert.SerializeObject(value, Options);
+    public static T? DeserializeObject<T>(string json) => JsonConvert.DeserializeObject<T>(json, Options);
 }
 
 public static class UnionJsonConvert

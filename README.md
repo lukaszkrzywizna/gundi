@@ -19,7 +19,7 @@ of a `string txt` and `int number` informs, that type can contain a `string` or 
 
 In order to use a generator, there has to be a defined simple union schema:
 
-```csharp
+```c#
 using Gundi;
 
 namespace MyNamespace
@@ -38,7 +38,7 @@ cases.
 The generator will generate a partial record which will contain all arguments kept as a private field and some public
 API:
 
-```csharp
+```c#
 
 namespace Gundi.Tests
 {
@@ -63,7 +63,7 @@ namespace Gundi.Tests
 
 Generated union should contain static argument-named factory function, and simple `match` & `map` methods:
 
-```csharp
+```c#
 var union = SimpleUnion.A(5);
 Console.WriteLine(union.IsA()); // prints true
 Console.WriteLine(union.IsB()); // prints false
@@ -88,7 +88,7 @@ The generator will generate `Cast` functions, which "force" to get a defined uni
 default, `InvalidOperationException` is thrown, but there is a possibility to override the type
 with `CustomCastException` setting:
 
-```csharp
+```c#
 [Union(CustomCastException = typeof(MyException))]
 public partial record UnionWithCustomException
 {
@@ -98,7 +98,7 @@ public partial record UnionWithCustomException
 
 The selected type must be an exception with a constructor with three arguments
 
-```csharp
+```c#
 public class MyException : Exception
 {
     public MyException(
@@ -113,20 +113,18 @@ public class MyException : Exception
 
 ### Serialization
 
-Due to generating fields and constructor with `private` modifier, the record can't be deserialized as it is. To resolve this, 'Gundi' provides custom JSON converters:
+Due to generating fields and constructor with `private` modifier, the record can't be deserialized as it is. To resolve this, `Gundi` provides custom JSON converters which are registered via `JsonConverter` attribute by default:
 
-- `UnionJsonConverterFactory` for System.Text.Json
+```c#
+[System.Text.Json.Serialization.JsonConverter(typeof(UnionJsonConverterFactory))] // assigned by default
+[Newtonsoft.Json.JsonConverter(typeof(UnionJsonNetConverter))] // assigned by default
+public partial record SimpleUnion
+```
 
-```csharp
+```c#
 using System.Text.Json;
 
 // (...)
-
-var options = new JsonSerializerOptions()
-{
-    Converters = {new UnionJsonConverterFactory()},
-    IncludeFields = true // mandatory if tuple is serialized
-};
 
 var union = SimpleUnion.A(5);
 var json = JsonSerializer.Serialize(union, options);
@@ -136,22 +134,54 @@ var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json, options);
 Console.WriteLine(union == deserialized); // prints true
 ```
 
-- `UnionJsonNetConverter` for Newtonsoft.Json
+```c#
+using System.Text.Json;
 
-```csharp
+// (...)
+
+var union = SimpleUnion.A(5);
+var json = JsonSerializer.Serialize(union, options);
+Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
+
+var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json, options);
+Console.WriteLine(union == deserialized); // prints true
+```
+
+If for some reason, you want to disable automatic converter registration, you can use `IgnoreJsonConverterAttribute`:
+
+```c#
+[Union(IgnoreJsonConverterAttribute = true)]
+public partial record UnionWithIgnoredJsonAttribute
+{
+    static partial void Cases((int, string) a, string b);
+}
+```
+
+```c#
+using System.Text.Json;
 using Newtonsoft.Json;
 
 // (...)
 
+// "{"Case":"A","Fields":[{"Item1":5,"Item2":"txt"}]}";
+var json = "{\"Case\":\"A\",\"Fields\":[{\"Item1\":5,\"Item2\":\"txt\"}]}";
+
+// System.Text.Json:
+var options = new JsonSerializerOptions()
+{
+    Converters = {new UnionJsonConverterFactory()},
+    IncludeFields = true // mandatory if tuple is serialized
+};
+
+JsonSerializer.Deserialize<UnionWithIgnoredJsonAttribute>(json, options); // works
+JsonSerializer.Deserialize<UnionWithIgnoredJsonAttribute>(json); // throws an error
+
+// Newtonsoft.Json:
 var settings = new JsonSerializerSettings();
 settings.Converters.Add(new UnionJsonNetConverter());
 
-var union = SimpleUnion.A(5);
-var json = JsonConvert.SerializeObject(union, settings);
-Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
-
-var deserialized = JsonConvert.DeserializeObject<SimpleUnion>(json, settings);
-Console.WriteLine(union == deserialized); // prints true
+JsonConvert.DeserializeObject<UnionWithIgnoredJsonAttribute>(json, settings); // works
+JsonConvert.DeserializeObject<UnionWithIgnoredJsonAttribute>(json); // throws an error
 ```
 
 The serialization model is a composition of two values:
@@ -182,14 +212,11 @@ using Newtonsoft.Json;
 
 // (...)
 
-var settings = new JsonSerializerSettings();
-settings.Converters.Add(new UnionJsonNetConverter());
-
 var fUnion = MyFsharpUnion.NewA(5);
 var json = JsonConvert.SerializeObject(fUnion);
 Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
 
-var output = JsonConvert.DeserializeObject<CSharpUnion>(json, settings);
+var output = JsonConvert.DeserializeObject<CSharpUnion>(json);
 Console.WriteLine(output!.CastToA() == 5); // prints true
 ```
 

@@ -11,7 +11,9 @@ internal static class SettingsAnalyzer
                 .Single(x => x.AttributeClass?.ToDisplayString() == UnionGenConsts.UnionAttributeName);
 
         var customException = GetCustomExceptionSettings(attribute);
-        return customException.Map(x => new UnionSettings<INamedTypeSymbol?>(x));
+        var ignoreJsonAttribute = GetJsonConvertAttribute(attribute);
+        return AnalyzerResult.Compose(customException, ignoreJsonAttribute, 
+            (ex, c) => new UnionSettings<INamedTypeSymbol?>(ex, c));
     }
 
     private static AnalyzerResult<INamedTypeSymbol?> GetCustomExceptionSettings(AttributeData attribute)
@@ -35,9 +37,17 @@ internal static class SettingsAnalyzer
                    (s.BaseType.Name == nameof(Exception) || CheckExceptionBaseType(s.BaseType));
         }
     }
+    private static AnalyzerResult<bool> GetJsonConvertAttribute(AttributeData attribute)
+    {
+        const string jsonSetting = nameof(UnionAttribute.IgnoreJsonConverterAttribute);
+        var includeAttribute = true;
+        var attr = attribute.NamedArguments.SingleOrDefault(x => x.Key == jsonSetting).Value;
+        if (!attr.IsNull && attr.Value is bool ignoreAttribute) includeAttribute = ignoreAttribute == false;
+        return AnalyzerResult.NoDiagnose(includeAttribute);
+    }
 }
 
-internal record UnionSettings<T>(T CustomException)
+internal record UnionSettings<T>(T CustomException, bool IncludeJsonAttribute)
 {
-    public UnionSettings<TOut> Map<TOut>(Func<T, TOut> mapper) => new(mapper(CustomException));
+    public UnionSettings<TOut> Map<TOut>(Func<T, TOut> mapper) => new(mapper(CustomException), IncludeJsonAttribute);
 }
