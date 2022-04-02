@@ -66,15 +66,11 @@ internal class UnionGenerator : IIncrementalGenerator
 
         var namespaceType = symbol.ContainingNamespace.ToDisplayString();
 
-        var simpleType = symbol.ToDisplayString(TypeFormats.SimpleTypeFormat);
         var input = new TemplateInput(
             new Union(
                 namespaceType, symbol.ToDisplayString(TypeFormats.RecordTypeFormat),
-                simpleType,
+                symbol.ToDisplayString(TypeFormats.SimpleTypeFormat),
                 symbol.ToDisplayString(TypeFormats.TypeWithSimpleGeneric),
-                symbol.IsGenericType
-                    ? simpleType + $"<{string.Join(',', Enumerable.Range(0, symbol.TypeArguments.Length - 1))}>"
-                    : simpleType,
                 settings.Result.Map(x =>
                     new TypeAttribute(x?.ToDisplayString(TypeFormats.ParameterTypeFormat) ?? string.Empty,
                         x is not null)),

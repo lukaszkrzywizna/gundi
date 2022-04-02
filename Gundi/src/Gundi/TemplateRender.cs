@@ -32,8 +32,7 @@ internal static class TemplateRender
 }
 
 internal record struct Union(string Namespace, string FullDefinitionType, string TypeNameOnly,
-    string TypeWithSimpleGeneric, string TypeWithOpenGeneric, UnionSettings<TypeAttribute> Settings, 
-    IReadOnlyCollection<Case> Cases);
+    string TypeWithSimpleGeneric, UnionSettings<TypeAttribute> Settings, IReadOnlyCollection<Case> Cases);
 
 internal record struct Case(int Index, string Type, string Name, string PascalName);
 

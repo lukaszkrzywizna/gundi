@@ -5,6 +5,8 @@ using Gundi;
 
 namespace {{ Union.Namespace }}
 {
+    {{ if Union.Settings.IncludeJsonAttribute }}[System.Text.Json.Serialization.JsonConverter(typeof(UnionJsonConverterFactory))]{{ end }}
+    {{ if Union.Settings.IncludeJsonAttribute }}[Newtonsoft.Json.JsonConverter(typeof(UnionJsonNetConverter))]{{ end }}
     partial record {{ Union.FullDefinitionType }}
     {
         private readonly byte tag;
