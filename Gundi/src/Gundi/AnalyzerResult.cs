@@ -10,7 +10,7 @@ internal record AnalyzerResult<T>(IReadOnlyCollection<Diagnostic> Diagnostics, T
 
 internal static class AnalyzerResult
 {
-    public static AnalyzerResult<T> NoDiagnose<T>(T value) => new(ArraySegment<Diagnostic>.Empty, value);
+    public static AnalyzerResult<T> NoDiagnose<T>(T value) => new(Array.Empty<Diagnostic>(), value);
 
     public static AnalyzerResult<T> Compose<T1, T2, T>(AnalyzerResult<T1> a1, AnalyzerResult<T2> a2,
         Func<T1, T2, T> construct)
