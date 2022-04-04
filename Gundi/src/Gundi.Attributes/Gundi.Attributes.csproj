@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Gundi</RootNamespace>
@@ -11,6 +12,9 @@
 
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="System.Text.Json" Version="6.0.2" />
+      <!-- Used by Gundi itself, need to be exposed by runtime lib to resolve nuget dependencies correctly -->
+      <PackageReference Include="Scriban" Version="5.4.3" />
     </ItemGroup>
 
 </Project>

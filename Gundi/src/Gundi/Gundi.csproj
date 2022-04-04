@@ -1,23 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IncludeBuiltOutput>false</IncludeBuiltOutput>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
-        <Description>Discrimated union source generator</Description>
+        <Description>The discriminated union source generator</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" PrivateAssets="all" />
-        <PackageReference Include="Scriban" Version="5.4.1" GeneratePathProperty="true" PrivateAssets="all" />
+        <!-- It's used by Gundi.Attributes but it needs to displayed to generate nuget's dependencies -->
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="System.Text.Json" Version="6.0.2" />
+        <!-- Used only by Gundi project and it needs to be copy if referenced directly -->
+        <PackageReference Include="Scriban" Version="5.4.3" GeneratePathProperty="true" />
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="../../../README.md" Pack="true" PackagePath="\" />
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-        <None Include="$(OutputPath)\Gundi.Attributes.dll" Pack="true" PackagePath="lib\net6.0" Visible="true" />
+        <None Include="$(OutputPath)\Gundi.Attributes.dll" Pack="true" PackagePath="lib\netstandard2.0" Visible="true" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,7 +42,7 @@
 
     <Target Name="GetDependencyTargetPaths">
         <ItemGroup>
-            <TargetPathWithTargetPlatformMoniker Include="$(PKGScriban)\lib\net6.0\Scriban.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGScriban)\lib\netstandard2.0\Scriban.dll" IncludeRuntimeDependency="false" />
         </ItemGroup>
     </Target>
 
