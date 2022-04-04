@@ -17,14 +17,15 @@
         <!-- It's used by Gundi.Attributes but it needs to displayed to generate nuget's dependencies -->
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="System.Text.Json" Version="6.0.2" />
-        <!-- Used only by Gundi project and it needs to be copy if referenced directly -->
-        <PackageReference Include="Scriban" Version="5.4.3" GeneratePathProperty="true" />
+        <!-- Used only by Gundi project and it needs to be copied -->
+        <PackageReference Include="Scriban" Version="5.4.3" GeneratePathProperty="true" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="../../../README.md" Pack="true" PackagePath="\" />
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         <None Include="$(OutputPath)\Gundi.Attributes.dll" Pack="true" PackagePath="lib\netstandard2.0" Visible="true" />
+        <None Include="$(PKGScriban)\lib\netstandard2.0\Scriban.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
