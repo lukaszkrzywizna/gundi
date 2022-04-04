@@ -123,28 +123,29 @@ public partial record SimpleUnion
 
 ```c#
 using System.Text.Json;
+using Newtonsoft.Json;
 
 // (...)
 
 var union = SimpleUnion.A(5);
-var json = JsonSerializer.Serialize(union, options);
+
+// System.Text.Json:
+var json = JsonSerializer.Serialize(union);
 Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
 
-var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json, options);
+var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json);
 Console.WriteLine(union == deserialized); // prints true
-```
 
-```c#
-using System.Text.Json;
+// Newtonsoft.Json:
+var jsonNet = JsonConvert.SerializeObject(union);
+Console.WriteLine(jsonNet); // prints {"Case":"A","Fields":[5]}
 
-// (...)
+var deserializedNet = JsonConvert.DeserializeObject<SimpleUnion>(json);
+Console.WriteLine(union == deserializedNet); // prints true
 
-var union = SimpleUnion.A(5);
-var json = JsonSerializer.Serialize(union, options);
-Console.WriteLine(json); // prints {"Case":"A","Fields":[5]}
-
-var deserialized = JsonSerializer.Deserialize<SimpleUnion>(json, options);
-Console.WriteLine(union == deserialized); // prints true
+// both serializers works in the same way:
+Console.WriteLine(json == jsonNet); // prints true
+Console.WriteLine(deserialized == deserializedNet); // prints true
 ```
 
 If for some reason, you want to disable automatic converter registration, you can use `IgnoreJsonConverterAttribute`:
