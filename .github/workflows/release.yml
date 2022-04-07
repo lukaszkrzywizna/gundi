@@ -1,13 +1,28 @@
 name: Release
 on:
-  release: 
-    types: [created, unpublished, edited, published]
-    
+  release:
+    types: [published]
+
 jobs:
-  build:
+  build & test & publish:
 
     runs-on: ubuntu-latest
-
+    env:
+      VERSION_TAG: $${{ github.event.release.tag_name }}
     steps:
-      - name: print release tag
-        run: echo ${{ github.event.release.tag_name }}
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+      - name: Restore dependencies
+        run: dotnet restore ./Gundi
+      - name: Build
+        run: dotnet build ./Gundi -c Release --no-restore
+      - name: Test
+        run: dotnet test ./Gundi -c Release --no-build --verbosity normal
+      - name: Pack
+        run: dotnet pack ./Gundi -c Release --no-build -o ./artifacts -p:Version=${VERSION_TAG:1}
+      - name: Nuget push
+        #run: dotnet nuget push ./artifacts/Gundi.${VERSION_TAG:1}.nupkg --source nuget.org --api-key ${{secrets.NUGET_TOKEN}} --skip-duplicate
+        run: ls ./artifacts
