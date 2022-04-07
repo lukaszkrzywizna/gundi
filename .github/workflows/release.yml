@@ -11,6 +11,6 @@ jobs:
 
     steps:
       - name: print release tag
-        run: echo ${{ VERSION_TAG }}
+        run: echo "${$VERSION_TAG:1}"
         env:
           VERSION_TAG: v0.1.0-preview3 #${{ github.event.release.tag_name }}
