@@ -4,7 +4,7 @@ on:
     types: [published]
 
 jobs:
-  build & test & publish:
+  build_test_publish:
 
     runs-on: ubuntu-latest
     env:
