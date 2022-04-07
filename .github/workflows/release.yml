@@ -1,6 +1,5 @@
 name: GitHub Actions Demo
 on:
-#  push:
   release: 
     types: [created]
     
@@ -12,18 +11,3 @@ jobs:
     steps:
       - name: print release tag
       - run: echo ${{ github.event.release.tag_name }}
-#      - uses: actions/checkout@v2
-#      - name: Setup .NET
-#        uses: actions/setup-dotnet@v1
-#        with:
-#          dotnet-version: 6.0.x
-#      - name: Restore dependencies
-#        run: dotnet restore ./Gundi
-#      - name: Build
-#        run: dotnet build ./Gundi --no-restore
-#      - name: Test
-#        run: dotnet test ./Gundi --no-build --verbosity normal
-#      - name: Pack
-#        run: dotnet pack ./Gundi -c Release -o ./artifacts -p:Version=0.1.0-preview3
-#      - name: Nuget push
-#        run: dotnet nuget push ./artifacts/Gundi.0.1.0-preview3.nupkg --source nuget.org --api-key ${{secrets.NUGET_TOKEN}} --skip-duplicate
