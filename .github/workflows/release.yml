@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: Release
 on:
   release: 
     types: [created]
@@ -10,4 +10,4 @@ jobs:
 
     steps:
       - name: print release tag
-      - run: echo ${{ github.event.release.tag_name }}
+        run: echo ${{ github.event.release.tag_name }}
