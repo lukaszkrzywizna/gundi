@@ -1,6 +1,5 @@
 using Gundi.Tests.Internal;
 using Newtonsoft.Json;
-using TestAssembly;
 using Xunit;
 using JsonException = System.Text.Json.JsonException;
 
@@ -13,8 +12,7 @@ public class SerializationTests
     {
         // simple type
         const int a = 5;
-        var fUnion = MyFsharpUnion.NewA(a);
-        var json = SimpleJsonConvert.SerializeObject(fUnion);
+        var json = "{\"Case\":\"A\",\"Fields\":[5]}";
         var output = SimpleJsonSerializer.Deserialize<CSharpUnion>(json);
         Assert.Equal(output!.CastToA(), a);
         output = SimpleJsonConvert.DeserializeObject<CSharpUnion>(json);
@@ -22,24 +20,21 @@ public class SerializationTests
         
         // string
         const string b = "aaaaa";
-        fUnion = MyFsharpUnion.NewB(b);
-        json = SimpleJsonConvert.SerializeObject(fUnion);
+        json = $"{{\"Case\":\"B\",\"Fields\":[\"{b}\"]}}";
         output = SimpleJsonSerializer.Deserialize<CSharpUnion>(json);
         Assert.Equal(output!.CastToB(), b);
         output = SimpleJsonConvert.DeserializeObject<CSharpUnion>(json);
         Assert.Equal(output!.CastToB(), b);
         
         // F# record type
-        fUnion = MyFsharpUnion.NewF(new FRecord(22, "yyyy"));
-        json = SimpleJsonConvert.SerializeObject(fUnion);
+        json = "{\"Case\":\"F\",\"Fields\":[{\"X\":22,\"Y\":\"yyyy\"}]}";
         output = SimpleJsonSerializer.Deserialize<CSharpUnion>(json);
-        Assert.Equal(output!.CastToF(), new FRecord(22, "yyyy"));
+        Assert.Equal(output!.CastToF(), new Record(22, "yyyy"));
         output = SimpleJsonConvert.DeserializeObject<CSharpUnion>(json);
-        Assert.Equal(output!.CastToF(), new FRecord(22, "yyyy"));
+        Assert.Equal(output!.CastToF(), new Record(22, "yyyy"));
         
         //F# tuple is not supported
-        fUnion = MyFsharpUnion.NewT("xyz", 2);
-        json = SimpleJsonConvert.SerializeObject(fUnion);
+        json = "{\"Case\":\"T\",\"Fields\":[\"xyz\",2]}";
         Assert.Throws<JsonException>(() => SimpleJsonSerializer.Deserialize<CSharpUnion>(json));
         Assert.Throws<JsonSerializationException>(() => SimpleJsonConvert.DeserializeObject<CSharpUnion>(json));
     }
@@ -127,8 +122,18 @@ public partial record UnionWithIgnoredJsonAttribute
     static partial void Cases((int, string) a, string b);
 }
 
+/*
+  Reflects F# union type:
+  type FRecord = { X: int; Y: string }
+  type MyFsharpUnion =
+  | A of int
+  | B of string
+  | F of FRecord
+  | T of string * int
+ */
 [Union]
 public partial record CSharpUnion
 {
-    static partial void Cases(int a, string b, FRecord f, (string, int) t);
+    static partial void Cases(int a, string b, Record f, (string, int) t);
 }
+public record Record(int X, string Y);
