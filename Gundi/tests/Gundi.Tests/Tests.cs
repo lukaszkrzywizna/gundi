@@ -1,5 +1,4 @@
 using System.Globalization;
-using TestAssembly;
 using Xunit;
 
 namespace Gundi.Tests;
@@ -73,6 +72,22 @@ public class Tests
 public partial record SimpleUnion
 {
     static partial void Cases(int a, string b, decimal c, int? d);
+}
+
+public class BaseException : Exception
+{
+    public BaseException(Type unionType, string expectedCase, string actualCase) 
+        : base($"Wrong {unionType.Name} cast. Expected: {expectedCase}, Actual: {actualCase}")
+    {
+    }
+}
+
+public class MyException : BaseException
+{
+    public MyException(Type unionType, string expectedCase, string actualCase) 
+        : base(unionType, expectedCase, actualCase)
+    {
+    }
 }
 
 [Union(CustomCastException = typeof(MyException))]
