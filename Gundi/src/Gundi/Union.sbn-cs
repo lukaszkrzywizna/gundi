@@ -98,8 +98,19 @@ namespace {{ Union.Namespace }}
                 _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
             };
         }        
-        
-        public override string ToString() => ActualCaseName();
+
+        private string? GetCaseToString()
+        {
+            return tag switch
+            {
+                {{~ for c in Union.Cases ~}}
+                {{ c.Index }} => this.{{ c.Name }}{{ if c.CanBeNull }}?.ToString() ?? "null"{{ else }}.ToString(){{ end }},
+                {{~ end ~}}
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
+        public override string ToString() => $"{ActualCaseName()} {GetCaseToString()}";
         
         {{~ for c in Union.Cases ~}}
         
@@ -121,10 +132,10 @@ namespace {{ Union.Namespace }}
 
         {{~ end ~}}
         
-        public class Converter : JsonConverter<{{ Union.FullDefinitionType }}>
+        public class Converter : JsonConverter<{{ Union.TypeWithSimpleGeneric }}>
         {
-            public override {{ Union.FullDefinitionType }}? NullValue => null;
-            public override JsonUnion MapToJsonUnion({{ Union.FullDefinitionType }} value)
+            public override {{ Union.TypeWithSimpleGeneric }}? NullValue => null;
+            public override JsonUnion MapToJsonUnion({{ Union.TypeWithSimpleGeneric }} value)
             {
                 var obj = value.Match(
                     {{~ for c in Union.Cases ~}}
@@ -134,7 +145,7 @@ namespace {{ Union.Namespace }}
                 return new JsonUnion(value.ActualCaseName(),  new [] { obj! });
             }
         
-            public override {{ Union.FullDefinitionType }} UnionResolver(string caseName, Func<Type, object> deserialize)
+            public override {{ Union.TypeWithSimpleGeneric }} UnionResolver(string caseName, Func<Type, object> deserialize)
             {
                 return caseName switch
                 {
@@ -146,12 +157,12 @@ namespace {{ Union.Namespace }}
             }
         }
         
-        public class SystemConverter : UnionJsonConverter<{{ Union.FullDefinitionType }}>
+        public class SystemConverter : UnionJsonConverter<{{ Union.TypeWithSimpleGeneric }}>
         {
             public SystemConverter() : base(new Converter()) { }
         }
         
-        public class JsonNetConverter : UnionJsonNetConverter<{{ Union.FullDefinitionType }}>
+        public class JsonNetConverter : UnionJsonNetConverter<{{ Union.TypeWithSimpleGeneric }}>
         {
             public JsonNetConverter() : base(new Converter()) { }
         }

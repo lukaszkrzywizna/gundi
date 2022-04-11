@@ -76,12 +76,22 @@ internal class UnionGenerator : IIncrementalGenerator
                         x is not null)),
                 cases
                     .Select((x, i) =>
-                        new Case(
-                            i + 1, 
-                            x.Type.ToDisplayString(TypeFormats.ParameterNullableTypeFormat),
-                            x.Type.ToDisplayString(TypeFormats.ParameterTypeFormat), 
+                    {
+                        var nullable = x.Type.ToDisplayString(TypeFormats.ParameterNullableTypeFormat);
+                        var isNullableGeneric = x.Type is ITypeParameterSymbol t &&
+                                                (!(t.HasNotNullConstraint || t.HasValueTypeConstraint ||
+                                                  t.HasUnmanagedTypeConstraint) ||
+                                                  t.ConstraintNullableAnnotations.Any(s =>
+                                                      s != NullableAnnotation.NotAnnotated));
+                        return new Case(
+                            i + 1,
+                            nullable,
+                            x.Type.ToDisplayString(TypeFormats.ParameterTypeFormat),
                             x.Name,
-                            x.Name.FirstCharToUpper()))
+                            x.Name.FirstCharToUpper(),
+                            nullable[nullable.Length - 1] == '?' || isNullableGeneric
+                        );
+                    })
                     .ToArray()
             )
         );

@@ -4,7 +4,7 @@ namespace Gundi;
 
 internal static class SettingsAnalyzer
 {
-    public static AnalyzerResult<UnionSettings<INamedTypeSymbol?>> GetUnionSettings(INamedTypeSymbol unionType)
+    public static AnalyzerResult<UnionAnalyzerSettings> GetUnionSettings(INamedTypeSymbol unionType)
     {
         var attribute =
             unionType.GetAttributes()
@@ -13,7 +13,7 @@ internal static class SettingsAnalyzer
         var customException = GetCustomExceptionSettings(attribute);
         var ignoreJsonAttribute = GetJsonConvertAttribute(attribute);
         return AnalyzerResult.Compose(customException, ignoreJsonAttribute, 
-            (ex, c) => new UnionSettings<INamedTypeSymbol?>(ex, c));
+            (ex, c) => new UnionAnalyzerSettings(ex, c));
     }
 
     private static AnalyzerResult<INamedTypeSymbol?> GetCustomExceptionSettings(AttributeData attribute)
@@ -46,6 +46,9 @@ internal static class SettingsAnalyzer
         return AnalyzerResult.NoDiagnose(includeAttribute);
     }
 }
+
+internal record UnionAnalyzerSettings(INamedTypeSymbol? CustomException, bool IncludeJsonAttribute) 
+    : UnionSettings<INamedTypeSymbol?>(CustomException, IncludeJsonAttribute);
 
 internal record UnionSettings<T>(T CustomException, bool IncludeJsonAttribute)
 {
