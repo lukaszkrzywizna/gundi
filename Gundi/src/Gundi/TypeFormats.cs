@@ -11,6 +11,11 @@ internal static class TypeFormats
     public static readonly SymbolDisplayFormat ParameterTypeFormat = new(
         typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
         genericsOptions: (SymbolDisplayGenericsOptions) 7);
+    
+    public static readonly SymbolDisplayFormat ParameterNullableTypeFormat = new(
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        genericsOptions: (SymbolDisplayGenericsOptions) 7,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
     public static readonly SymbolDisplayFormat SimpleTypeFormat = new(
         typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,

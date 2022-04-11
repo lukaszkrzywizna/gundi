@@ -29,7 +29,8 @@ public class Tests
             a => a.ToString(),
             b => b,
             c => c.ToString(CultureInfo.InvariantCulture),
-            d => d?.ToString()
+            d => d?.ToString(),
+            r => r?.ToString()
             );
 
         Assert.Equal("5", mapped);
@@ -37,6 +38,7 @@ public class Tests
         Assert.Equal("default", union.MatchB(x => x, "default"));
         Assert.Equal("default", union.MatchC(x => x.ToString(CultureInfo.InvariantCulture), "default"));
         Assert.Equal("default", union.MatchD(x => x.ToString(), "default"));
+        Assert.Equal("default", union.MatchNullableRecord(x => x?.ToString(), "default"));
     }
     
     [Fact]
@@ -47,7 +49,8 @@ public class Tests
             a => a,
             b => b,
             c => c,
-            d => d);
+            d => d,
+            r => r);
 
         Assert.Equal(union, mapped);
     }
@@ -71,7 +74,7 @@ public class Tests
 [Union]
 public partial record SimpleUnion
 {
-    static partial void Cases(int a, string b, decimal c, int? d);
+    static partial void Cases(int a, string b, decimal c, int? d, Record? nullableRecord);
 }
 
 public class BaseException : Exception
