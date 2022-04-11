@@ -76,7 +76,11 @@ internal class UnionGenerator : IIncrementalGenerator
                         x is not null)),
                 cases
                     .Select((x, i) =>
-                        new Case(i + 1, x.Type.ToDisplayString(TypeFormats.ParameterTypeFormat), x.Name,
+                        new Case(
+                            i + 1, 
+                            x.Type.ToDisplayString(TypeFormats.ParameterNullableTypeFormat),
+                            x.Type.ToDisplayString(TypeFormats.ParameterTypeFormat), 
+                            x.Name,
                             x.Name.FirstCharToUpper()))
                     .ToArray()
             )

@@ -139,7 +139,7 @@ namespace {{ Union.Namespace }}
                 return caseName switch
                 {
                     {{~ for c in Union.Cases ~}}
-                    "{{ c.PascalName }}" => {{ c.PascalName }}(({{ c.Type }})deserialize(typeof({{ c.Type }})!)),
+                    "{{ c.PascalName }}" => {{ c.PascalName }}(({{ c.Type }})deserialize(typeof({{ c.NotNullableType }})!)),
                     {{~ end ~}}
                     _ => throw new ArgumentOutOfRangeException(nameof(JsonUnion.Case), caseName, "Union has undefined state!")
                 };
