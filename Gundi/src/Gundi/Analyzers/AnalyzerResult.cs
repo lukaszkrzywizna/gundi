@@ -5,7 +5,6 @@ namespace Gundi;
 internal record AnalyzerResult<T>(IReadOnlyCollection<Diagnostic> Diagnostics, T Result)
 {
     public AnalyzerResult<TOut> Map<TOut>(Func<T, TOut> mapper) => new(Diagnostics, mapper(Result));
-
 }
 
 internal static class AnalyzerResult
@@ -19,4 +18,7 @@ internal static class AnalyzerResult
         var value = construct(a1.Result, a2.Result);
         return new AnalyzerResult<T>(diagnostics.ToArray(), value);
     }
+
+    public static AnalyzerResult<T> New<T>(IReadOnlyCollection<Diagnostic> diagnostics, T value) =>
+        new(diagnostics, value);
 }

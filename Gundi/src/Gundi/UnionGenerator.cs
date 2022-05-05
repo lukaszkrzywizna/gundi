@@ -1,4 +1,7 @@
 using System.Collections.Immutable;
+using Gundi.Extensions;
+using Gundi.Rendering;
+using Gundi.Settings;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -23,12 +26,12 @@ internal class UnionGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(compilationResult,
             static (ctx, source) => Execute(source.Left, source.Right, ctx));
+        
+        static bool IsSyntaxTargetForGeneration(SyntaxNode node)
+            => node is RecordDeclarationSyntax {AttributeLists.Count: > 0};
     }
 
-    private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-        => node is RecordDeclarationSyntax {AttributeLists.Count: > 0};
-
-    private record struct SemanticTarget(INamedTypeSymbol Symbol, RecordDeclarationSyntax Syntax);
+    private record struct SemanticTarget(INamedTypeSymbol Symbol, RecordDeclarationSyntax Syntax, NullableContext NullableContext);
 
     private static SemanticTarget? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
@@ -39,7 +42,8 @@ internal class UnionGenerator : IIncrementalGenerator
         if (symbol is not INamedTypeSymbol namedSymbol) return null;
         if (namedSymbol.GetAttributes()
             .Any(a => a.AttributeClass?.ToDisplayString() == UnionGenConsts.UnionAttributeName))
-            return new SemanticTarget(namedSymbol, recordSyntax);
+            return new SemanticTarget(namedSymbol, recordSyntax,
+                context.SemanticModel.GetNullableContext(context.Node.GetLocation().SourceSpan.Start));
 
         return null;
     }
@@ -48,46 +52,29 @@ internal class UnionGenerator : IIncrementalGenerator
         SourceProductionContext context)
     {
         if (foundRecords.IsDefaultOrEmpty) return;
-        foreach (var union in foundRecords.Select(x => GenerateUnion(x.Symbol)).Where(x => x is not null))
-            context.AddSource($"{union!.FileName}.g.cs", union.Script);
+        foreach (var result in foundRecords.Select(x => GenerateUnion(x.Symbol, x.NullableContext)))
+        {
+            context.ReportDiagnostics(result.Diagnostics);
+            if(result.Result is not null)
+                context.AddSource($"{result.Result.FileName}.g.cs", result.Result.Script);
+        }
     }
 
     private record GeneratedUnion(string FileName, string Script);
 
-    private static GeneratedUnion? GenerateUnion(INamedTypeSymbol symbol)
+    private static AnalyzerResult<GeneratedUnion?> GenerateUnion(INamedTypeSymbol symbol, NullableContext nullableContext)
     {
-        var settings = SettingsAnalyzer.GetUnionSettings(symbol);
-        var anyError = settings.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error);
+        var settings = Analyzer.GetUnionSettings(symbol);
+        
+        var analyzedUnion = Unions.Analyzer.Analyze(symbol);
 
-        if (anyError)
-            return null;
-
-        var cases = Analyzer.GetUnionCases(symbol);
-
-        var namespaceType = symbol.ContainingNamespace.ToDisplayString();
-
-        var input = new TemplateInput(
-            new Union(
-                namespaceType, symbol.ToDisplayString(TypeFormats.RecordTypeFormat),
-                symbol.ToDisplayString(TypeFormats.SimpleTypeFormat),
-                symbol.ToDisplayString(TypeFormats.TypeWithSimpleGeneric),
-                settings.Result.Map(x =>
-                    new TypeAttribute(x?.ToDisplayString(TypeFormats.ParameterTypeFormat) ?? string.Empty,
-                        x is not null)),
-                cases
-                    .Select((x, i) =>
-                        new Case(
-                            i + 1, 
-                            x.Type.ToDisplayString(TypeFormats.ParameterNullableTypeFormat),
-                            x.Type.ToDisplayString(TypeFormats.ParameterTypeFormat), 
-                            x.Name,
-                            x.Name.FirstCharToUpper()))
-                    .ToArray()
-            )
-        );
-
+        var fullDiagnostics = settings.Diagnostics.Concat(analyzedUnion.Diagnostics).ToArray();
+        if (fullDiagnostics.Any(x => x.Severity == DiagnosticSeverity.Error))
+            return settings.Map(_ => (GeneratedUnion?) null);
+        
+        var input = TemplateInputFactory.Build(new GeneratorData(analyzedUnion.Result, settings.Result, nullableContext));
         var output = TemplateRender.Render(input);
         var fileName = input.Union.TypeNameOnly + (symbol.IsGenericType ? "T" : string.Empty);
-        return new GeneratedUnion(fileName, output);
+        return settings.Map<GeneratedUnion?>(_ => new GeneratedUnion(fileName, output));
     }
 }

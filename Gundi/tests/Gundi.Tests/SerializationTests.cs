@@ -56,7 +56,7 @@ public class SerializationTests
     [Fact]
     public void UnionWithGenericType_CanBeSerializedAndDeserializedBySystemJson()
     {
-        var union = UnionWithGeneric<State<decimal>>.Generic(new State<decimal>(5));
+        var union = UnionWithGeneric<State<decimal>?>.Generic(new State<decimal>(5));
         var json = SimpleJsonSerializer.Serialize(union);
         Assert.Equal("{\"Case\":\"Generic\",\"Fields\":[{\"Value\":5}]}", json);
         var deserialized = SimpleJsonSerializer.Deserialize<UnionWithGeneric<State<decimal>>>(json!);
@@ -111,7 +111,7 @@ public class SerializationTests
 }
 
 [Union]
-public partial record UnionWithGeneric<T>
+public partial record UnionWithGeneric<T> where T : class?
 {
     static partial void Cases(int? a, string b, T generic);
 }
@@ -136,4 +136,4 @@ public partial record CSharpUnion
 {
     static partial void Cases(int a, string b, Record f, (string, int) t);
 }
-public record Record(int X, string Y);
+public record struct Record(int X, string Y);

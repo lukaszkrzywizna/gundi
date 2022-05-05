@@ -1,8 +1,9 @@
 using System.Reflection;
+using Gundi.Settings;
 using Scriban;
 using Scriban.Runtime;
 
-namespace Gundi;
+namespace Gundi.Rendering;
 
 internal static class TemplateRender
 {
@@ -32,9 +33,10 @@ internal static class TemplateRender
 }
 
 internal record struct Union(string Namespace, string FullDefinitionType, string TypeNameOnly,
-    string TypeWithSimpleGeneric, UnionSettings<TypeAttribute> Settings, IReadOnlyCollection<Case> Cases);
+    string TypeWithSimpleGeneric, bool NullableEnabled, UnionSettings<TypeAttribute> Settings, IReadOnlyCollection<Case> Cases);
 
-internal record struct Case(int Index, string Type, string NotNullableType, string Name, string PascalName);
+internal record struct Case(int Index, string Type, string NotNullableType, string Name, string PascalName, 
+    bool CanBeNull, bool HasNullableToString);
 
 internal record TemplateInput(Union Union);
 

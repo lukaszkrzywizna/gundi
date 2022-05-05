@@ -1,4 +1,4 @@
-namespace Gundi;
+namespace Gundi.Extensions;
 
 internal static class StringExtensions
 {
