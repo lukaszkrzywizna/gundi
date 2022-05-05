@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Gundi;
 
-internal static class Diagnose
+internal static class DiagnoseFactory
 {
     public static Diagnostic Error(string id, string title, string message, Location location)
         => CreateDiagnose(id, title, message, location, DiagnosticSeverity.Error,

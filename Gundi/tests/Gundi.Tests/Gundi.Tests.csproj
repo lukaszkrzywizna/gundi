@@ -8,11 +8,16 @@
         <GenerateProgramFile>false</GenerateProgramFile>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
         <IsPackable>false</IsPackable>
-        <!-- Uncomment to see generated files -->
-<!--        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
-<!--        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
+    <ItemGroup>
+        <!-- Exclude the output of source generators from the compilation -->
+        <!-- Comment to see generated files in a project -->
+        <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+    </ItemGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\..\src\Gundi.Attributes\Gundi.Attributes.csproj" />
         <ProjectReference Include="..\..\src\Gundi\Gundi.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
