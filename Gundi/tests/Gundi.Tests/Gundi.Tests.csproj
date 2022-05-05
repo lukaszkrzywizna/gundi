@@ -15,7 +15,7 @@
     <ItemGroup>
         <!-- Exclude the output of source generators from the compilation -->
         <!-- Comment to see generated files in a project -->
-<!--        <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />-->
+        <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
     </ItemGroup>
     
     <ItemGroup>
