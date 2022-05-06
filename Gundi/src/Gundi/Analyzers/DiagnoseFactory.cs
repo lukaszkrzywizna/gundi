@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Gundi;
+namespace Gundi.Analyzers;
 
 internal static class DiagnoseFactory
 {

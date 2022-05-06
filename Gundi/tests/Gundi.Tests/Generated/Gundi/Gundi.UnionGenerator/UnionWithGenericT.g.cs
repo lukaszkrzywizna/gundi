@@ -128,6 +128,29 @@ namespace Gundi.Tests
 
         public override string ToString() => $"{ActualCaseName()} {GetCaseToString()}";
 
+        public override int GetHashCode()
+        {
+            return tag switch
+            {
+                1 => System.HashCode.Combine(this.a),
+                2 => System.HashCode.Combine(this.b),
+                3 => System.HashCode.Combine(this.generic),
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
+        public virtual bool Equals(UnionWithGeneric<T>? other)
+        {
+            return tag switch
+            {
+                _ when other is null => false,
+                1 => other.IsA() && System.Collections.Generic.EqualityComparer<System.Int32?>.Default.Equals(this.a, other.CastToA()),
+                2 => other.IsB() && System.Collections.Generic.EqualityComparer<System.String>.Default.Equals(this.b, other.CastToB()),
+                3 => other.IsGeneric() && System.Collections.Generic.EqualityComparer<T>.Default.Equals(this.generic, other.CastToGeneric()),
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
         
         public TOut MatchA<TOut>(Func<System.Int32?, TOut> a, TOut _)
             => IsA() ? a(this.a) : _;
