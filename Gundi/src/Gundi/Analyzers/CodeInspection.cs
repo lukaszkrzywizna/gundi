@@ -1,7 +1,6 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace Gundi;
+namespace Gundi.Analyzers;
 
 public static class CodeInspection
 {

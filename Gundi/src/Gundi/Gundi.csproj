@@ -30,7 +30,7 @@
 
     <ItemGroup>
         <None Remove="Union.sbn-cs" />
-        <EmbeddedResource Include="Union.sbn-cs" />
+        <EmbeddedResource Include="Rendering\Union.sbn-cs" />
     </ItemGroup>
 
     <ItemGroup>

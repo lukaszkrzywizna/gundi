@@ -1,12 +1,12 @@
-#nullable {{ if Union.NullableEnabled }}enable{{ else }}disable{{ end }} 
+#nullable {{ if NullableEnabled }}enable{{ else }}disable{{ end }} 
 
 using System;
 using Gundi;
 
 namespace {{ Union.Namespace }}
 {
-    {{ if Union.Settings.IncludeJsonAttribute }}[System.Text.Json.Serialization.JsonConverter(typeof(UnionJsonConverterFactory))]{{ end }}
-    {{ if Union.Settings.IncludeJsonAttribute }}[Newtonsoft.Json.JsonConverter(typeof(UnionJsonNetConverter))]{{ end }}
+    {{ if Settings.IncludeJsonAttribute }}[System.Text.Json.Serialization.JsonConverter(typeof(UnionJsonConverterFactory))]{{ end }}
+    {{ if Settings.IncludeJsonAttribute }}[Newtonsoft.Json.JsonConverter(typeof(UnionJsonNetConverter))]{{ end }}
     partial record {{ Union.FullDefinitionType }}
     {
         private readonly byte tag;
@@ -112,6 +112,29 @@ namespace {{ Union.Namespace }}
 
         public override string ToString() => $"{ActualCaseName()} {GetCaseToString()}";
 
+        public override int GetHashCode()
+        {
+            return tag switch
+            {
+                {{~ for c in Union.Cases ~}}
+                {{ c.Index }} => System.HashCode.Combine(this.{{ c.Name }}),
+                {{~ end ~}}
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
+        public virtual bool Equals({{ Union.TypeWithSimpleGeneric }}? other)
+        {
+            return tag switch
+            {
+                _ when other is null => false,
+                {{~ for c in Union.Cases ~}}
+                {{ c.Index }} => other.Is{{ c.PascalName }}() && System.Collections.Generic.EqualityComparer<{{ c.Type }}>.Default.Equals(this.{{ c.Name }}, other.CastTo{{ c.PascalName }}()),
+                {{~ end ~}}
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
         {{~ for c in Union.Cases ~}}
         
         public TOut Match{{ c.PascalName }}<TOut>(Func<{{ c.Type }}, TOut> {{ c.Name }}, TOut _)
@@ -123,8 +146,8 @@ namespace {{ Union.Namespace }}
         public {{ c.Type }} CastTo{{ c.PascalName }}()
             => Is{{ c.PascalName }}() 
                 ? this.{{ c.Name }} 
-                : {{ if Union.Settings.CustomException.IsDefined -}}
-                  throw new {{ Union.Settings.CustomException.TypeName }}(this.GetType(), nameof({{ c.PascalName }}), ActualCaseName());
+                : {{ if Settings.CustomException.IsDefined -}}
+                  throw new {{ Settings.CustomException.TypeName }}(this.GetType(), nameof({{ c.PascalName }}), ActualCaseName());
                   {{- else -}}
                   throw new InvalidOperationException(
                     $"Wrong union cast. Expected state: {{ c.PascalName }}, Actual state: {ActualCaseName()}.");

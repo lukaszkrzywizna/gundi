@@ -180,6 +180,33 @@ namespace Gundi.Tests
 
         public override string ToString() => $"{ActualCaseName()} {GetCaseToString()}";
 
+        public override int GetHashCode()
+        {
+            return tag switch
+            {
+                1 => System.HashCode.Combine(this.a),
+                2 => System.HashCode.Combine(this.b),
+                3 => System.HashCode.Combine(this.c),
+                4 => System.HashCode.Combine(this.d),
+                5 => System.HashCode.Combine(this.nullableRecord),
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
+        public virtual bool Equals(SimpleUnion? other)
+        {
+            return tag switch
+            {
+                _ when other is null => false,
+                1 => other.IsA() && System.Collections.Generic.EqualityComparer<System.Int32>.Default.Equals(this.a, other.CastToA()),
+                2 => other.IsB() && System.Collections.Generic.EqualityComparer<System.String>.Default.Equals(this.b, other.CastToB()),
+                3 => other.IsC() && System.Collections.Generic.EqualityComparer<System.Decimal>.Default.Equals(this.c, other.CastToC()),
+                4 => other.IsD() && System.Collections.Generic.EqualityComparer<System.Int32?>.Default.Equals(this.d, other.CastToD()),
+                5 => other.IsNullableRecord() && System.Collections.Generic.EqualityComparer<Gundi.Tests.Record?>.Default.Equals(this.nullableRecord, other.CastToNullableRecord()),
+                _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Union has undefined state!")
+            };
+        }
+
         
         public TOut MatchA<TOut>(Func<System.Int32, TOut> a, TOut _)
             => IsA() ? a(this.a) : _;

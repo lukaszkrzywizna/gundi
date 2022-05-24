@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Gundi;
+namespace Gundi.Analyzers;
 
 internal record AnalyzerResult<T>(IReadOnlyCollection<Diagnostic> Diagnostics, T Result)
 {

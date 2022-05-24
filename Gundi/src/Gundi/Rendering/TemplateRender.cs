@@ -1,5 +1,5 @@
 using System.Reflection;
-using Gundi.Settings;
+using Gundi.Analyzers.Settings;
 using Scriban;
 using Scriban.Runtime;
 
@@ -12,7 +12,7 @@ internal static class TemplateRender
     private static string LoadTemplateScript(string name)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        var manifestStream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.{name}.sbn-cs");
+        var manifestStream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.Rendering.{name}.sbn-cs");
         using var reader = new StreamReader(manifestStream!);
         return reader.ReadToEnd();
     }
@@ -31,13 +31,3 @@ internal static class TemplateRender
         return UnionTemplate.Value.Render(templateContext);
     }
 }
-
-internal record struct Union(string Namespace, string FullDefinitionType, string TypeNameOnly,
-    string TypeWithSimpleGeneric, bool NullableEnabled, UnionSettings<TypeAttribute> Settings, IReadOnlyCollection<Case> Cases);
-
-internal record struct Case(int Index, string Type, string NotNullableType, string Name, string PascalName, 
-    bool CanBeNull, bool HasNullableToString);
-
-internal record TemplateInput(Union Union);
-
-internal record TypeAttribute(string? TypeName, bool IsDefined);
